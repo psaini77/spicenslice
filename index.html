@@ -309,8 +309,9 @@
   <div id="setup" class="setup-card">
     <h2>Who's playing today?</h2>
     <div id="syncCheckBanner" class="sync-check-banner"></div>
-    <p class="hint">Type in all 8 names to get the party started. Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
+    <p class="hint">Type in all 8 names to get the party started (start typing and pick from suggestions if you've played before). Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
     <div class="name-grid" id="nameGrid"></div>
+    <datalist id="knownPlayers"></datalist>
     <div class="row-opts">
       <label>Number of games:</label>
       <input type="number" id="totalRounds" value="8" min="3" max="20">
@@ -398,7 +399,7 @@ for (let i=0;i<8;i++){
   const tag = document.createElement('div');
   tag.className = 'name-tag';
   tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${i+1}</div>
-    <input id="name${i}" placeholder="Player ${i+1}">`;
+    <input id="name${i}" placeholder="Player ${i+1}" maxlength="24" list="knownPlayers" autocomplete="off">`;
   nameGrid.appendChild(tag);
 }
 document.getElementById('partyCode').value = randomCode();
@@ -407,6 +408,47 @@ function initials(name){
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || name.slice(0,2).toUpperCase();
 }
+
+// ---------- REMEMBERED PLAYER NAMES ----------
+// Just a plain dropdown of names typed in before on this device/browser, so
+// a regular group doesn't have to retype the same 8 names every time. Stored
+// locally — nothing shared or synced, and totally optional to use.
+const KNOWN_PLAYERS_KEY = 'picklePartyKnownPlayers';
+
+function getKnownPlayers(){
+  try{
+    return JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
+  }catch(err){
+    return [];
+  }
+}
+
+function rememberPlayerNames(names){
+  try{
+    const known = getKnownPlayers();
+    names.forEach(n=>{
+      const trimmed = n.trim();
+      if(trimmed && !known.includes(trimmed)) known.push(trimmed);
+    });
+    // keep the most recent 40 so the list doesn't grow forever
+    localStorage.setItem(KNOWN_PLAYERS_KEY, JSON.stringify(known.slice(-40)));
+  }catch(err){
+    // localStorage can fail (private browsing, storage full, etc.) — fine to just skip remembering
+  }
+  populateKnownPlayersList();
+}
+
+function populateKnownPlayersList(){
+  const dl = document.getElementById('knownPlayers');
+  const known = getKnownPlayers();
+  dl.innerHTML = known.map(n => `<option value="${escapeHtmlAttr(n)}">`).join('');
+}
+
+function escapeHtmlAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+populateKnownPlayersList();
 
 // ---------- SHARED STORAGE (Netlify Function + Blobs) ----------
 const API_BASE = '/.netlify/functions/party';
@@ -528,7 +570,7 @@ async function manualSync(){
 }
 
 async function startNewParty(){
-  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase() || randomCode();
+  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'') || randomCode();
   partyCode = codeInput;
 
   const existing = await loadRemoteState();
@@ -553,13 +595,14 @@ async function startNewParty(){
       wins:0, losses:0, games:0, lastDelta:0
     }));
     generatePairing();
+    rememberPlayerNames(names);
   }
 
   await enterMainScreen();
 }
 
 async function joinExistingParty(){
-  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase();
+  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!codeInput){ alert('Type the party code the other player is using first.'); return; }
   partyCode = codeInput;
 
@@ -641,13 +684,26 @@ function generatePairing(){
 function P(id){ return players.find(p=>p.id===id); }
 function nameOf(id){ return P(id).name; }
 
+// Anything that came from a player name (or any other synced data) must be
+// escaped before going into innerHTML — otherwise someone could type
+// something like <img onerror=...> as their "name" and have it execute in
+// everyone else's browser once it syncs to their screen.
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function avatarHtml(id, size){
   const p = P(id);
-  return `<div class="avatar" style="background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${initials(p.name)}</div>`;
+  return `<div class="avatar" style="background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${escapeHtml(initials(p.name))}</div>`;
 }
 
 function editableName(id, extraClass){
-  return `<span class="editable-name ${extraClass||''}" onclick="startEditName(this,${id})">${nameOf(id)}<i class="pencil">✎</i></span>`;
+  return `<span class="editable-name ${extraClass||''}" onclick="startEditName(this,${id})">${escapeHtml(nameOf(id))}<i class="pencil">✎</i></span>`;
 }
 
 function render(){
@@ -734,8 +790,8 @@ function render(){
     hb.innerHTML = '<div class="timeline">' + history.slice().reverse().map(h=>`
       <div class="t-item ${h.final?'final':''}">
         <b>Game ${h.round}${h.final?' 🏆 Final':''}</b><br>
-        <span class="match">Court A: ${h.aT1} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${h.aT2}</span><br>
-        <span class="match">Court B: ${h.bT1} <span class="score-chip">${h.bScore1}–${h.bScore2}</span> ${h.bT2}</span>
+        <span class="match">Court A: ${escapeHtml(h.aT1)} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${escapeHtml(h.aT2)}</span><br>
+        <span class="match">Court B: ${escapeHtml(h.bT1)} <span class="score-chip">${h.bScore1}–${h.bScore2}</span> ${escapeHtml(h.bT2)}</span>
       </div>`).join('') + '</div>';
   }
 }
@@ -745,12 +801,12 @@ function startEditName(el, id){
   if(el.querySelector('input')) return;
   const p = P(id);
   const current = p.name;
-  el.innerHTML = `<input type="text" class="name-edit-input" value="${current.replace(/"/g,'&quot;')}">`;
+  el.innerHTML = `<input type="text" class="name-edit-input" value="${escapeHtml(current)}" maxlength="24">`;
   const input = el.querySelector('input');
   input.focus(); input.select();
   const commit = ()=>{
     const val = input.value.trim();
-    if(val && val !== p.name){ p.name = val; render(); saveState(); }
+    if(val && val !== p.name){ p.name = val; render(); saveState(); rememberPlayerNames([val]); }
     else { render(); }
   };
   input.addEventListener('keydown', e=>{
