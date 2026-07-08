@@ -227,6 +227,14 @@
   .champ .court-head{color:var(--sun);}
   .court-head h4{font-size:17px;display:flex;align-items:center;gap:6px;color:var(--ink);font-weight:700;}
   .court-head .badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:0.7;}
+  .court-num-row{padding:0 16px 6px;}
+  .court-num-tag{
+    cursor:pointer;font-size:12.5px;font-weight:700;color:var(--sun);border-bottom:2px dotted transparent;
+  }
+  .court-num-tag:hover{border-bottom-color:var(--sun);}
+  .court-num-tag .pencil{font-size:11px;opacity:0;margin-left:4px;transition:opacity .15s ease;}
+  .court-num-tag:hover .pencil{opacity:1;}
+  .court-num-input{width:70px;}
   .court-why{
     font-size:11.5px;font-weight:600;color:var(--ink-dim);padding:0 16px 10px;line-height:1.4;
   }
@@ -538,6 +546,7 @@ let isFinal = false;
 let finished = false;
 let partyStartedAt = null; // when this party's first game began — used for the elapsed-time readout
 let clockTimer = null;
+let courtNumbers = { A:'', B:'' }; // the facility's actual physical court numbers, tap-to-edit on the court card
 
 let partyCode = null;
 let storageOk = null;      // null = unknown, true/false once tested
@@ -635,7 +644,7 @@ populateKnownPlayersList();
 const API_BASE = '/.netlify/functions/party';
 
 function snapshotState(){
-  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, savedAt: Date.now() };
+  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, courtNumbers, savedAt: Date.now() };
 }
 
 // Runs once on page load, independent of any party code, so we know right away
@@ -705,6 +714,7 @@ function applyRemoteState(s){
   pairing = s.pairing; lastPairKey = s.lastPairKey; history = s.history; isFinal = s.isFinal;
   finished = !!s.finished;
   partyStartedAt = s.partyStartedAt || partyStartedAt;
+  courtNumbers = s.courtNumbers || courtNumbers;
 }
 
 function updateSyncBadge(){
@@ -789,6 +799,7 @@ async function startNewParty(){
     generatePairing();
     rememberPlayerNames(names);
     partyStartedAt = Date.now();
+    courtNumbers = { A:'', B:'' };
   }
 
   await enterMainScreen();
@@ -1030,6 +1041,9 @@ function render(){
         <h4>🎾 Court ${court}</h4>
         <span class="badge">${isFinal && court==='A' ? 'Championship' : (court==='A' ? 'Top court' : 'Challenger court')}</span>
       </div>
+      <div class="court-num-row">
+        <span class="court-num-tag" onclick="startEditCourtNum(this,'${court}')">${courtNumbers[court] ? `📍 Court #${escapeHtml(courtNumbers[court])}` : '📍 tap to set the physical court #'}<i class="pencil">✎</i></span>
+      </div>
       <div class="court-why">${whyText}</div>
       <div class="court-surface">
         <div class="kitchen-line"></div>
@@ -1092,6 +1106,29 @@ function startEditName(el, id){
     const val = input.value.trim();
     if(val && val !== p.name){ p.name = val; render(); saveState(); rememberPlayerNames([val]); }
     else { render(); }
+  };
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter') input.blur();
+    if(e.key==='Escape'){ render(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+function startEditCourtNum(el, court){
+  if(el.querySelector('input')) return;
+  const current = courtNumbers[court] || '';
+  el.innerHTML = `<input type="text" class="name-edit-input court-num-input" value="${escapeHtml(current)}" maxlength="6" placeholder="e.g. 5" inputmode="numeric">`;
+  const input = el.querySelector('input');
+  input.focus(); input.select();
+  const commit = async ()=>{
+    const val = input.value.trim();
+    if(val !== courtNumbers[court]){
+      courtNumbers[court] = val;
+      render();
+      await saveState();
+    } else {
+      render();
+    }
   };
   input.addEventListener('keydown', e=>{
     if(e.key==='Enter') input.blur();
