@@ -97,36 +97,6 @@
     box-shadow:0 1px 2px rgba(0,0,0,0.4), 0 0 30px rgba(0,229,255,0.08);
   }
   .setup-card h2{font-size:28px;color:var(--sun);margin-bottom:4px;text-shadow:0 0 14px rgba(255,46,154,0.35);}
-
-  .back-to-vote-btn{margin-bottom:14px;font-size:12.5px;padding:7px 12px;}
-
-  .mode-toggle{display:flex;gap:10px;margin:14px 0 4px;}
-  .mode-btn{
-    flex:1;background:var(--cream-2);border:1px solid rgba(234,246,255,0.12);border-radius:12px;
-    padding:12px 10px;font-size:14px;color:var(--ink-dim);display:flex;flex-direction:column;align-items:center;gap:2px;
-  }
-  .mode-btn span{font-size:11px;font-weight:600;opacity:0.8;}
-  .mode-btn.active{border-color:var(--sun);color:var(--ink);background:rgba(255,46,154,0.08);box-shadow:0 0 0 1px rgba(255,46,154,0.3);}
-
-  /* ---------- VOTE SCREEN ---------- */
-  .vote-form{margin:16px 0 22px;}
-  .vote-checks{display:flex;gap:16px;margin:14px 0 18px;flex-wrap:wrap;}
-  .vote-check{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:var(--ink);cursor:pointer;}
-  .vote-check input{width:20px;height:20px;accent-color:var(--sun);}
-  .vote-tallies{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
-  @media(max-width:560px){.vote-tallies{grid-template-columns:1fr;}}
-  .vote-day-card{background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);border-radius:14px;padding:14px;}
-  .vote-day-card h4{font-size:15px;color:var(--pickle);margin-bottom:8px;}
-  .vote-list{min-height:24px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;}
-  .vote-list .voter-row{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;}
-  .vote-list .voter-row .avatar{width:24px;height:24px;font-size:10px;flex:none;}
-  .vote-list .empty{color:var(--ink-dim);font-size:13px;font-weight:500;}
-  .courts-msg{font-size:12.5px;color:var(--ink-dim);font-weight:600;margin-bottom:10px;line-height:1.5;}
-  .courts-msg.ready{color:var(--pickle);}
-  .vote-book-btn{width:100%;padding:11px;font-size:13.5px;}
-  .vote-book-btn:disabled{opacity:0.4;cursor:not-allowed;}
-  .vote-footer-row{display:flex;gap:10px;}
-  .vote-footer-row button{flex:1;}
   .sync-check-banner{
     font-size:12.5px;font-weight:600;border-radius:10px;padding:9px 12px;margin:10px 0 4px;
     display:flex;align-items:center;gap:8px;
@@ -218,7 +188,6 @@
   /* ---------- COURTS ---------- */
   .courts-heading{font-size:22px;color:var(--pickle);margin:0 0 12px;display:flex;align-items:center;gap:8px;text-shadow:0 0 12px rgba(57,255,106,0.35);}
   .courts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
-  .courts.single{grid-template-columns:1fr;max-width:420px;margin-left:auto;margin-right:auto;}
   @media(max-width:720px){.courts{grid-template-columns:1fr;}}
   .court-card{
     background:var(--card);border:1px solid rgba(234,246,255,0.1);border-radius:18px;overflow:hidden;
@@ -383,7 +352,7 @@
   <div class="hero">
     <div>
       <h1><span class="mascot">🥒</span> Pickle Party</h1>
-      <div class="sub">Vote, book, play — 4 or 8 players &middot; nobody sits out</div>
+      <div class="sub">8 players &middot; 2 courts &middot; nobody sits out</div>
     </div>
     <div class="hero-right">
       <button class="btn-ghost home-btn" onclick="openGuide()" title="How scoring & pairing works">❓ How this works</button>
@@ -396,56 +365,11 @@
     </div>
   </div>
 
-  <!-- VOTE SCREEN — the new landing page -->
-  <div id="voteScreen" class="setup-card">
-    <h2>🗳️ Vote for this weekend</h2>
-    <p class="hint" id="voteDatesHint">Loading dates…</p>
-    <div id="voteSyncBanner" class="sync-check-banner"></div>
-
-    <div class="vote-form">
-      <div class="name-tag" style="margin-bottom:12px;">
-        <div class="avatar" style="background:#39FF6A;">?</div>
-        <input id="voteName" placeholder="Your name" maxlength="24" list="knownPlayers" autocomplete="off">
-      </div>
-      <div class="vote-checks">
-        <label class="vote-check"><input type="checkbox" id="voteSat"> ☀️ Saturday 7–9am</label>
-        <label class="vote-check"><input type="checkbox" id="voteSun"> ☀️ Sunday 7–9am</label>
-      </div>
-      <button class="btn-big" onclick="submitVote()">🗳️ Submit my vote</button>
-    </div>
-
-    <div class="vote-tallies">
-      <div class="vote-day-card">
-        <h4 id="satTitle">Saturday</h4>
-        <div class="vote-list" id="satVoteList"></div>
-        <div class="courts-msg" id="satCourtsMsg"></div>
-        <button class="btn-ghost vote-book-btn" id="satBookBtn" onclick="bookAndStart('saturday')">📋 Book &amp; start Saturday</button>
-      </div>
-      <div class="vote-day-card">
-        <h4 id="sunTitle">Sunday</h4>
-        <div class="vote-list" id="sunVoteList"></div>
-        <div class="courts-msg" id="sunCourtsMsg"></div>
-        <button class="btn-ghost vote-book-btn" id="sunBookBtn" onclick="bookAndStart('sunday')">📋 Book &amp; start Sunday</button>
-      </div>
-    </div>
-
-    <div class="vote-footer-row">
-      <button class="btn-ghost" onclick="copyInvite()">📣 Copy invite message</button>
-      <button class="btn-ghost" onclick="refreshPollTally()">🔄 Refresh votes</button>
-    </div>
-    <button class="btn-ghost" style="width:100%;margin-top:10px;padding:11px;" onclick="showSetupScreen()">⚙️ Skip voting — set up manually</button>
-  </div>
-
   <!-- SETUP SCREEN -->
-  <div id="setup" class="setup-card hidden">
-    <button class="btn-ghost back-to-vote-btn" onclick="showVoteScreen()">🗳️ Back to voting</button>
+  <div id="setup" class="setup-card">
     <h2>Who's playing today?</h2>
     <div id="syncCheckBanner" class="sync-check-banner"></div>
-    <div class="mode-toggle">
-      <button type="button" id="mode4Btn" class="mode-btn" onclick="setCourtMode(1)">🎾 4 players <span>1 court</span></button>
-      <button type="button" id="mode8Btn" class="mode-btn active" onclick="setCourtMode(2)">🎾🎾 8 players <span>2 courts</span></button>
-    </div>
-    <p class="hint" id="setupHint">Type in all 8 names to get the party started (start typing and pick from suggestions if you've played before). Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
+    <p class="hint">Type in all 8 names to get the party started (start typing and pick from suggestions if you've played before). Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
     <div class="name-grid" id="nameGrid"></div>
     <datalist id="knownPlayers"></datalist>
     <div class="row-opts">
@@ -567,7 +491,6 @@ const AVATAR_COLORS = ['#39FF6A','#00E5FF','#FF2E9A','#B026FF','#FF5D3A','#2BFFD
 let players = [];      // {id,name,rating,court,wins,losses,games,lastDelta}
 let roundNum = 1;
 let totalRounds = 8;
-let numCourts = 2;     // 1 = single court (4 players, no ladder), 2 = full ladder mode (8 players)
 let pairing = null;
 let lastPairKey = {A:null,B:null};
 let currentScores = { A:[0,0], B:[0,0] }; // live tap-stepper scores for the round in progress
@@ -591,29 +514,13 @@ function randomCode(){
 
 // ---------- SETUP ----------
 const nameGrid = document.getElementById('nameGrid');
-
-function renderNameInputs(count){
-  nameGrid.innerHTML = '';
-  for (let i=0;i<count;i++){
-    const tag = document.createElement('div');
-    tag.className = 'name-tag';
-    tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${i+1}</div>
-      <input id="name${i}" placeholder="Player ${i+1}" maxlength="24" list="knownPlayers" autocomplete="off">`;
-    nameGrid.appendChild(tag);
-  }
+for (let i=0;i<8;i++){
+  const tag = document.createElement('div');
+  tag.className = 'name-tag';
+  tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${i+1}</div>
+    <input id="name${i}" placeholder="Player ${i+1}" maxlength="24" list="knownPlayers" autocomplete="off">`;
+  nameGrid.appendChild(tag);
 }
-
-function setCourtMode(mode){
-  numCourts = mode;
-  document.getElementById('mode4Btn').classList.toggle('active', mode===1);
-  document.getElementById('mode8Btn').classList.toggle('active', mode===2);
-  renderNameInputs(mode===1 ? 4 : 8);
-  document.getElementById('setupHint').textContent = mode===1
-    ? "Type in all 4 names to get started. All 4 of you just keep playing on the one court — no ladder or promotion needed, since there's nowhere else to go. Partners still rotate a little each game to keep things fair."
-    : "Type in all 8 names to get the party started (start typing and pick from suggestions if you've played before). Everyone plays every game — 4v4 across two courts — so with ~15\u00A0min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.";
-}
-
-renderNameInputs(8);
 document.getElementById('partyCode').value = randomCode();
 
 function initials(name){
@@ -622,35 +529,28 @@ function initials(name){
 }
 
 // ---------- REMEMBERED PLAYER NAMES ----------
-// A dropdown of names to pick from instead of retyping — starts with the
-// regular group's roster below, and grows with anyone new who's added at
-// setup or during voting. Extra names are stored locally per device.
-const DEFAULT_PLAYERS = [
-  'Aarti','Deepa','Gopi','Kala','Khushboo','Latika','Nancy','Nidhi',
-  'Payal','Puja','Rupa','Sangita','Sonal B','Sonal M','Suruchi','Tripti'
-];
+// Just a plain dropdown of names typed in before on this device/browser, so
+// a regular group doesn't have to retype the same 8 names every time. Stored
+// locally — nothing shared or synced, and totally optional to use.
 const KNOWN_PLAYERS_KEY = 'picklePartyKnownPlayers';
 
 function getKnownPlayers(){
-  let extra = [];
   try{
-    extra = JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
+    return JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
   }catch(err){
-    extra = [];
+    return [];
   }
-  const merged = [...new Set([...DEFAULT_PLAYERS, ...extra])];
-  return merged.sort((a,b)=>a.localeCompare(b));
 }
 
 function rememberPlayerNames(names){
   try{
-    const stored = JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
+    const known = getKnownPlayers();
     names.forEach(n=>{
       const trimmed = n.trim();
-      if(trimmed && !DEFAULT_PLAYERS.includes(trimmed) && !stored.includes(trimmed)) stored.push(trimmed);
+      if(trimmed && !known.includes(trimmed)) known.push(trimmed);
     });
-    // keep the most recent 40 extras so the list doesn't grow forever
-    localStorage.setItem(KNOWN_PLAYERS_KEY, JSON.stringify(stored.slice(-40)));
+    // keep the most recent 40 so the list doesn't grow forever
+    localStorage.setItem(KNOWN_PLAYERS_KEY, JSON.stringify(known.slice(-40)));
   }catch(err){
     // localStorage can fail (private browsing, storage full, etc.) — fine to just skip remembering
   }
@@ -669,128 +569,54 @@ function escapeHtmlAttr(str){
 
 populateKnownPlayersList();
 
-// ---------- SHARED STORAGE (a real JSON file in your GitHub repo) ----------
-// One-time setup — fill in these three things and you're done forever:
-//
-// 1) GITHUB_OWNER / GITHUB_REPO — your GitHub username and the repo name.
-// 2) GITHUB_TOKEN — GitHub → avatar → Settings → Developer settings →
-//    Personal access tokens → Tokens (classic) → Generate new token (classic).
-//    Give it the "repo" checkbox, generate, and paste it below (copy it
-//    immediately — GitHub only shows it once).
-//
-// This reads and writes a plain file called party-data.json in your repo.
-// Open that file on GitHub anytime to see exactly what's stored.
-const GITHUB_OWNER = 'psaini77';
-const GITHUB_REPO  = 'spicenslice';
-const GITHUB_TOKEN = 'GITHUB_TOKEN';
-const DATA_FILE_PATH = 'party-data.json';
-const GITHUB_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`;
-
-function utf8ToBase64(str){ return btoa(unescape(encodeURIComponent(str))); }
-function base64ToUtf8(b64){ return decodeURIComponent(escape(atob(b64))); }
-
-function setupIncomplete(){
-  return GITHUB_OWNER === 'YOUR_GITHUB_USERNAME' || GITHUB_REPO === 'YOUR_REPO_NAME' || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN';
-}
-
-// Reads the current party-data.json file from GitHub.
-// Returns { data, sha } — sha is GitHub's version marker, needed to write safely.
-// If the file doesn't exist yet, returns { data: {}, sha: null }.
-async function readDataFile(){
-  const res = await fetch(GITHUB_API, {
-    headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github+json' }
-  });
-  if(res.status === 404){
-    return { data: {}, sha: null };
-  }
-  if(!res.ok){
-    const detail = await res.json().catch(()=>({}));
-    throw new Error(`GitHub read failed (${res.status}): ${detail.message || 'unknown error'}`);
-  }
-  const json = await res.json();
-  const data = JSON.parse(base64ToUtf8(json.content));
-  return { data, sha: json.sha };
-}
-
-// Writes the whole party-data.json file back to GitHub.
-// Retries if someone else saved in between (a 409 conflict), by re-reading
-// the latest version, re-applying our change, and trying again.
-async function writeDataFile(mutateFn, attempt=0){
-  const { data, sha } = await readDataFile();
-  const updated = mutateFn(data);
-  const body = {
-    message: `Update party data (${new Date().toISOString()})`,
-    content: utf8ToBase64(JSON.stringify(updated, null, 2)),
-    ...(sha ? { sha } : {})
-  };
-  const res = await fetch(GITHUB_API, {
-    method: 'PUT',
-    headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github+json' },
-    body: JSON.stringify(body)
-  });
-  if(res.status === 409 && attempt < 2){
-    return writeDataFile(mutateFn, attempt + 1); // someone else wrote first — retry with fresh data
-  }
-  if(!res.ok){
-    const detail = await res.json().catch(()=>({}));
-    throw new Error(`GitHub write failed (${res.status}): ${detail.message || 'unknown error'}`);
-  }
-  return updated;
-}
+// ---------- SHARED STORAGE (Netlify Function + Blobs) ----------
+const API_BASE = '/.netlify/functions/party';
 
 function snapshotState(){
-  return { players, roundNum, totalRounds, numCourts, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, savedAt: Date.now() };
+  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, savedAt: Date.now() };
 }
 
 // Runs once on page load, independent of any party code, so we know right away
 // (before anyone types a single name) whether live sync actually works — instead
 // of silently discovering it later.
 async function testStorageConnection(){
-  const banners = [document.getElementById('syncCheckBanner'), document.getElementById('voteSyncBanner')];
-  banners.forEach(banner=>{
-    banner.className = 'sync-check-banner checking';
-    banner.textContent = '🔄 Checking live sync for this device…';
-  });
-
-  if(setupIncomplete()){
-    storageOk = false;
-    banners.forEach(banner=>{
-      banner.className = 'sync-check-banner fail';
-      banner.textContent = "⚠️ Live sync isn't set up yet — fill in GITHUB_OWNER, GITHUB_REPO and GITHUB_TOKEN near the top of the script.";
-    });
-    return;
-  }
+  const banner = document.getElementById('syncCheckBanner');
+  banner.className = 'sync-check-banner checking';
+  banner.textContent = '🔄 Checking live sync for this device…';
 
   try{
-    await readDataFile(); // a plain read is enough to confirm the token + repo are reachable
-    storageOk = true;
+    const testCode = 'TEST' + Math.random().toString(36).slice(2,6).toUpperCase();
+    const postRes = await fetch(`${API_BASE}?code=${testCode}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ping:true})
+    });
+    if(!postRes.ok) throw new Error('POST failed: ' + postRes.status);
+    const getRes = await fetch(`${API_BASE}?code=${testCode}`);
+    if(!getRes.ok) throw new Error('GET failed: ' + getRes.status);
+    const data = await getRes.json();
+    storageOk = !!(data && data.ping === true);
   }catch(err){
     storageOk = false;
     console.error('Storage self-test failed:', err);
   }
 
-  banners.forEach(banner=>{
-    if(storageOk){
-      banner.className = 'sync-check-banner ok';
-      banner.textContent = '✅ Live sync works here — votes and scores will share with everyone.';
-    } else {
-      banner.className = 'sync-check-banner fail';
-      banner.textContent = "⚠️ Live sync isn't reachable right now — double check the token has 'repo' access and the owner/repo names are correct.";
-    }
-  });
+  if(storageOk){
+    banner.className = 'sync-check-banner ok';
+    banner.textContent = '✅ Live sync works here — scores will share with anyone using the same code.';
+  } else {
+    banner.className = 'sync-check-banner fail';
+    banner.textContent = "⚠️ Live sync isn't reachable right now. You can still play, but updates won't reach other devices until this is fixed — check that the site is deployed on Netlify with the party function enabled.";
+  }
 }
 testStorageConnection();
 
 async function saveState(){
   if(!partyCode) return;
   try{
-    await writeDataFile(data => {
-      data.parties = data.parties || {};
-      data.parties[partyCode] = snapshotState();
-      return data;
+    const res = await fetch(`${API_BASE}?code=${partyCode}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(snapshotState())
     });
-    storageOk = true;
-    lastSavedAt = Date.now();
+    storageOk = res.ok;
+    if(res.ok) lastSavedAt = Date.now();
   }catch(err){
     storageOk = false;
     console.error('Save failed:', err);
@@ -803,8 +629,10 @@ async function saveState(){
 async function loadRemoteState(){
   if(!partyCode) return null;
   try{
-    const { data } = await readDataFile();
-    return (data.parties && data.parties[partyCode]) || null;
+    const res = await fetch(`${API_BASE}?code=${partyCode}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data || null;
   }catch(err){
     return null;
   }
@@ -812,7 +640,6 @@ async function loadRemoteState(){
 
 function applyRemoteState(s){
   players = s.players; roundNum = s.roundNum; totalRounds = s.totalRounds;
-  numCourts = s.numCourts || 2;
   pairing = s.pairing; lastPairKey = s.lastPairKey; history = s.history; isFinal = s.isFinal;
   finished = !!s.finished;
   partyStartedAt = s.partyStartedAt || partyStartedAt;
@@ -877,15 +704,14 @@ async function startNewParty(){
       const proceed = confirm("⚠️ Live sync isn't reachable from this device right now, so this party will stay local-only (other phones won't see updates). Start anyway?");
       if(!proceed) return;
     }
-    const playerCount = numCourts === 1 ? 4 : 8;
     const names = [];
-    for(let i=0;i<playerCount;i++){
+    for(let i=0;i<8;i++){
       const v = document.getElementById('name'+i).value.trim();
       names.push(v || ('Player '+(i+1)));
     }
     totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
     players = names.map((n,i)=>({
-      id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: (numCourts===1 || i<4) ? 'A':'B',
+      id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
       wins:0, losses:0, games:0, lastDelta:0
     }));
     generatePairing();
@@ -919,7 +745,6 @@ async function joinExistingParty(){
 async function enterMainScreen(){
   undoSnapshot = null; // a fresh entry into a party (new or rejoined) has nothing local to undo yet
   myPlayerId = loadMyId();
-  document.getElementById('voteScreen').classList.add('hidden');
   document.getElementById('setup').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
   document.getElementById('gamePill').classList.remove('hidden');
@@ -927,7 +752,6 @@ async function enterMainScreen(){
   document.getElementById('syncNowBtn').classList.remove('hidden');
   document.getElementById('endPartyBtn').classList.remove('hidden');
   document.getElementById('clockBadge').classList.remove('hidden');
-  stopPollPolling();
   startClock();
 
   if(finished){
@@ -987,40 +811,24 @@ function goHome(){
   document.getElementById('endPartyBtn').classList.add('hidden');
   document.getElementById('clockBadge').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
-  document.getElementById('voteScreen').classList.add('hidden');
-  setCourtMode(numCourts);
   // pre-fill so re-entering the same code just rejoins where things left off
   if(partyCode) document.getElementById('partyCode').value = partyCode;
   players.forEach((p,i)=>{ const inp = document.getElementById('name'+i); if(inp) inp.value = p.name; });
   if(totalRounds) document.getElementById('totalRounds').value = totalRounds;
 }
 
-function showVoteScreen(){
-  document.getElementById('setup').classList.add('hidden');
-  document.getElementById('voteScreen').classList.remove('hidden');
-  refreshPollTally();
-  startPollPolling();
-}
-
-function showSetupScreen(){
-  document.getElementById('voteScreen').classList.add('hidden');
-  document.getElementById('setup').classList.remove('hidden');
-  stopPollPolling();
-}
-
 // ---------- PAIRING LOGIC ----------
 function generatePairing(){
   isFinal = (roundNum === totalRounds);
 
-  if(isFinal && numCourts === 2){
+  if(isFinal){
     const sorted = [...players].sort((a,b)=>b.rating-a.rating);
     const topFour = sorted.slice(0,4).map(p=>p.id);
     players.forEach(p=>{ p.court = topFour.includes(p.id) ? 'A' : 'B'; });
   }
 
-  const courtsList = numCourts === 1 ? ['A'] : ['A','B'];
   pairing = {};
-  courtsList.forEach(court=>{
+  ['A','B'].forEach(court=>{
     const group = players.filter(p=>p.court===court).sort((a,b)=>b.rating-a.rating);
     const key = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
     let t1, t2;
@@ -1087,7 +895,7 @@ function editableName(id, extraClass){
 function render(){
   document.getElementById('gamePill').textContent =
     isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
-  document.getElementById('finalBanner').classList.toggle('hidden', !(isFinal && numCourts===2));
+  document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
   document.getElementById('undoBtn').style.display = undoSnapshot ? 'inline-flex' : 'none';
 
   const sorted = [...players].sort((a,b)=>b.rating-a.rating);
@@ -1121,19 +929,14 @@ function render(){
   currentScores = { A:[0,0], B:[0,0] }; // reset each render/round — a fresh round means fresh scores
   const wrap = document.getElementById('courtsWrap');
   wrap.innerHTML = '';
-  wrap.classList.toggle('single', numCourts===1);
-  const courtsList = numCourts === 1 ? ['A'] : ['A','B'];
-  courtsList.forEach(court=>{
+  ['A','B'].forEach(court=>{
     const {t1,t2} = pairing[court];
     const card = document.createElement('div');
-    card.className = 'court-card' + (isFinal && numCourts===2 && court==='A' ? ' champ' : '');
-    const badgeText = numCourts===1
-      ? 'The court'
-      : (isFinal && court==='A' ? 'Championship' : (court==='A' ? 'Top court' : 'Challenger court'));
+    card.className = 'court-card' + (isFinal && court==='A' ? ' champ' : '');
     card.innerHTML = `
       <div class="court-head">
         <h4>🎾 Court ${court}</h4>
-        <span class="badge">${badgeText}</span>
+        <span class="badge">${isFinal && court==='A' ? 'Championship' : (court==='A' ? 'Top court' : 'Challenger court')}</span>
       </div>
       <div class="court-surface">
         <div class="kitchen-line"></div>
@@ -1176,7 +979,8 @@ function render(){
     hb.innerHTML = '<div class="timeline">' + history.slice().reverse().map(h=>`
       <div class="t-item ${h.final?'final':''}">
         <b>Game ${h.round}${h.final?' 🏆 Final':''}</b><br>
-        <span class="match">Court A: ${escapeHtml(h.aT1)} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${escapeHtml(h.aT2)}</span>${h.bT1 ? `<br><span class="match">Court B: ${escapeHtml(h.bT1)} <span class="score-chip">${h.bScore1}–${h.bScore2}</span> ${escapeHtml(h.bT2)}</span>` : ''}
+        <span class="match">Court A: ${escapeHtml(h.aT1)} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${escapeHtml(h.aT2)}</span><br>
+        <span class="match">Court B: ${escapeHtml(h.bT1)} <span class="score-chip">${h.bScore1}–${h.bScore2}</span> ${escapeHtml(h.bT2)}</span>
       </div>`).join('') + '</div>';
   }
 }
@@ -1219,43 +1023,33 @@ function setScore(court, teamIndex, rawValue){
 async function submitRound(){
   const sA1 = currentScores.A[0];
   const sA2 = currentScores.A[1];
-  if(sA1===sA2){
-    alert("Enter a final score for the court — no ties in pickleball, so the two numbers need to differ!");
+  const sB1 = currentScores.B[0];
+  const sB2 = currentScores.B[1];
+
+  if(sA1===sA2 || sB1===sB2){
+    alert("Enter a final score for both courts — no ties in pickleball, so the two numbers need to differ!");
     return;
-  }
-  let sB1, sB2;
-  if(numCourts === 2){
-    sB1 = currentScores.B[0];
-    sB2 = currentScores.B[1];
-    if(sB1===sB2){
-      alert("Enter a final score for both courts — no ties in pickleball, so the two numbers need to differ!");
-      return;
-    }
   }
 
   // Snapshot everything as it was right before this submission, in case it needs undoing.
   undoSnapshot = JSON.parse(JSON.stringify({
-    players, roundNum, totalRounds, numCourts, pairing, lastPairKey, history, isFinal, finished
+    players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished
   }));
 
   applyResult('A', sA1, sA2);
-  if(numCourts === 2) applyResult('B', sB1, sB2);
+  applyResult('B', sB1, sB2);
 
-  const histEntry = {
+  history.push({
     round: roundNum, final:isFinal,
     aT1:nameOf(pairing.A.t1[0])+'/'+nameOf(pairing.A.t1[1]), aT2:nameOf(pairing.A.t2[0])+'/'+nameOf(pairing.A.t2[1]),
-    aScore1:sA1, aScore2:sA2
-  };
-  if(numCourts === 2){
-    histEntry.bT1 = nameOf(pairing.B.t1[0])+'/'+nameOf(pairing.B.t1[1]);
-    histEntry.bT2 = nameOf(pairing.B.t2[0])+'/'+nameOf(pairing.B.t2[1]);
-    histEntry.bScore1 = sB1; histEntry.bScore2 = sB2;
-  }
-  history.push(histEntry);
+    aScore1:sA1, aScore2:sA2,
+    bT1:nameOf(pairing.B.t1[0])+'/'+nameOf(pairing.B.t1[1]), bT2:nameOf(pairing.B.t2[0])+'/'+nameOf(pairing.B.t2[1]),
+    bScore1:sB1, bScore2:sB2
+  });
 
   if(roundNum >= totalRounds){ finished = true; await saveState(); finishTournament(); return; }
 
-  if(numCourts === 2 && !isFinal){
+  if(!isFinal){
     moveLadder(sA1>sA2 ? pairing.A.t2 : pairing.A.t1,
                sB1>sB2 ? pairing.B.t1 : pairing.B.t2);
   }
@@ -1270,7 +1064,7 @@ async function undoLastSubmit(){
   if(!undoSnapshot) return;
   const ok = confirm('Undo the last submitted score? This puts the game back to right before that submission.');
   if(!ok) return;
-  ({ players, roundNum, totalRounds, numCourts, pairing, lastPairKey, history, isFinal, finished } = undoSnapshot);
+  ({ players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished } = undoSnapshot);
   undoSnapshot = null;
   render();
   await saveState();
@@ -1338,168 +1132,6 @@ function spawnConfetti(container){
     setTimeout(()=>c.remove(), 4000);
   }
 }
-
-// ---------- VOTING ----------
-// The poll for "this weekend" is automatic — no code to share for it. Everyone
-// who opens the site during the same week sees the same Saturday/Sunday poll,
-// computed from today's date, so there's nothing to coordinate beyond the link.
-let currentPollCache = { votes: {} };
-let pollPollTimer = null;
-
-function pollWeekendKey(){
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun ... 6=Sat
-  let diff;
-  if(day === 6) diff = 0;       // today is Saturday
-  else if(day === 0) diff = -1; // yesterday was Saturday
-  else diff = 6 - day;          // days until the coming Saturday
-  const sat = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
-  const y = sat.getFullYear();
-  const m = String(sat.getMonth()+1).padStart(2,'0');
-  const d = String(sat.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
-}
-
-function formatPollDate(key, addDays){
-  const [y,m,d] = key.split('-').map(Number);
-  const dt = new Date(y, m-1, d + addDays);
-  return dt.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
-}
-
-function updateVoteDatesHint(){
-  const key = pollWeekendKey();
-  document.getElementById('voteDatesHint').innerHTML =
-    `Vote for one or both sessions — 7–9am. Once enough people confirm, whoever's booking the court can lock it in below.`;
-  document.getElementById('satTitle').textContent = '☀️ ' + formatPollDate(key, 0);
-  document.getElementById('sunTitle').textContent = '☀️ ' + formatPollDate(key, 1);
-  const nameVal = loadVotingName();
-  if(nameVal) document.getElementById('voteName').value = nameVal;
-}
-updateVoteDatesHint();
-
-function loadVotingName(){
-  try{ return localStorage.getItem('pickleVoterName') || ''; }catch(err){ return ''; }
-}
-function saveVotingName(n){
-  try{ localStorage.setItem('pickleVoterName', n); }catch(err){}
-}
-
-async function submitVote(){
-  const name = document.getElementById('voteName').value.trim();
-  if(!name){ alert('Enter your name first.'); return; }
-  const days = [];
-  if(document.getElementById('voteSat').checked) days.push('saturday');
-  if(document.getElementById('voteSun').checked) days.push('sunday');
-  if(days.length === 0){ alert('Check at least one day to vote for.'); return; }
-
-  saveVotingName(name);
-  rememberPlayerNames([name]);
-  const key = pollWeekendKey();
-
-  try{
-    await writeDataFile(data => {
-      data.polls = data.polls || {};
-      data.polls[key] = data.polls[key] || { votes: {} };
-      data.polls[key].votes[name] = days;
-      return data;
-    });
-  }catch(err){
-    alert("Couldn't save your vote:\n\n" + err.message);
-    console.error('Vote save failed:', err);
-    return;
-  }
-  await refreshPollTally();
-}
-
-async function refreshPollTally(){
-  const key = pollWeekendKey();
-  let poll = { votes: {} };
-  try{
-    const { data } = await readDataFile();
-    poll = (data.polls && data.polls[key]) || { votes: {} };
-  }catch(err){
-    console.error('Poll load failed:', err);
-  }
-  currentPollCache = poll;
-  renderPollTally(poll);
-}
-
-function courtsMessage(count){
-  if(count === 0) return { text:'No votes yet — be the first!', ready:false };
-  if(count < 4) return { text:`${count} confirmed — need ${4-count} more to book a court.`, ready:false };
-  if(count === 4) return { text:'✅ 4 confirmed — 1 court, just play! No pairing needed.', ready:true };
-  if(count < 8) return { text:`${count} confirmed — this app runs best at exactly 4 or 8. Round up to 8 or ask ${count-4} to sit out this time.`, ready:false };
-  if(count === 8) return { text:'✅ 8 confirmed — 2 courts, full ladder mode!', ready:true };
-  return { text:`${count} confirmed — more than this app handles at once (max 8). Consider a second session for the extra ${count-8}.`, ready:false };
-}
-
-function renderPollTally(poll){
-  ['sat','sun'].forEach(prefix=>{
-    const day = prefix === 'sat' ? 'saturday' : 'sunday';
-    const voters = Object.keys(poll.votes || {}).filter(n => poll.votes[n].includes(day));
-    const listEl = document.getElementById(prefix + 'VoteList');
-    listEl.innerHTML = voters.length
-      ? voters.map((n,i)=>`<div class="voter-row"><div class="avatar" style="background:${AVATAR_COLORS[i%AVATAR_COLORS.length]}">${escapeHtml(initials(n))}</div>${escapeHtml(n)}</div>`).join('')
-      : '<div class="empty">No votes yet</div>';
-
-    const msg = courtsMessage(voters.length);
-    const msgEl = document.getElementById(prefix + 'CourtsMsg');
-    msgEl.textContent = msg.text;
-    msgEl.className = 'courts-msg' + (msg.ready ? ' ready' : '');
-
-    const btn = document.getElementById(prefix + 'BookBtn');
-    btn.disabled = !msg.ready;
-  });
-}
-
-function startPollPolling(){
-  if(pollPollTimer) clearInterval(pollPollTimer);
-  pollPollTimer = setInterval(()=>{
-    const active = document.activeElement;
-    if(active && active.tagName === 'INPUT') return; // don't disrupt someone mid-vote
-    refreshPollTally();
-  }, 8000);
-}
-function stopPollPolling(){
-  if(pollPollTimer) clearInterval(pollPollTimer);
-}
-
-function bookAndStart(day){
-  const voters = Object.keys(currentPollCache.votes || {}).filter(n => currentPollCache.votes[n].includes(day));
-  const msg = courtsMessage(voters.length);
-  if(!msg.ready){
-    alert(`Can't book yet — ${msg.text}`);
-    return;
-  }
-  const mode = voters.length === 4 ? 1 : 2;
-  showSetupScreen();
-  setCourtMode(mode);
-  voters.forEach((name,i)=>{
-    const inp = document.getElementById('name'+i);
-    if(inp) inp.value = name;
-  });
-  document.getElementById('totalRounds').value = 8;
-  document.getElementById('partyCode').value = randomCode();
-}
-
-function copyInvite(){
-  const key = pollWeekendKey();
-  const msg = `🥒 Pickle Party vote! Playing this weekend?\n${formatPollDate(key,0)} or ${formatPollDate(key,1)}, 7–9am.\nVote here: ${location.href}`;
-  if(navigator.share){
-    navigator.share({ text: msg }).catch(()=>{});
-  } else if(navigator.clipboard){
-    navigator.clipboard.writeText(msg).then(()=>{
-      alert('Copied! Paste it into your group chat.');
-    }).catch(()=>{
-      prompt('Copy this message:', msg);
-    });
-  } else {
-    prompt('Copy this message:', msg);
-  }
-}
-
-refreshPollTally();
-startPollPolling();
 </script>
 </body>
 </html>
