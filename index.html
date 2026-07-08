@@ -204,6 +204,10 @@
   }
   .commentary-line{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;}
   .commentary-line + .commentary-line{margin-top:6px;}
+  .my-move-notice{
+    font-size:14.5px;font-weight:800;color:var(--pickle);margin-bottom:8px;
+    padding-bottom:8px;border-bottom:1px dashed rgba(234,246,255,0.15);
+  }
   .commentary-recap{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--sun);font-style:italic;}
 
   /* ---------- COURTS ---------- */
@@ -223,6 +227,10 @@
   .champ .court-head{color:var(--sun);}
   .court-head h4{font-size:17px;display:flex;align-items:center;gap:6px;color:var(--ink);font-weight:700;}
   .court-head .badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:0.7;}
+  .court-why{
+    font-size:11.5px;font-weight:600;color:var(--ink-dim);padding:0 16px 10px;line-height:1.4;
+  }
+  .champ .court-why{color:rgba(255,255,255,0.75);}
 
   .court-surface{
     background:linear-gradient(160deg, rgba(0,229,255,0.85), rgba(0,174,204,0.85));
@@ -401,7 +409,7 @@
       <label>Party code:</label>
       <input type="text" id="partyCode" maxlength="6" autocapitalize="characters" autocomplete="off" style="width:110px;text-transform:uppercase;letter-spacing:0.1em;">
     </div>
-    <p class="hint" style="margin:0 0 18px;font-size:13px;">Everyone uses the <b>same code</b>. Whoever adds the players taps <b>Start new party</b>; everyone else taps <b>Join existing party</b> with that same code to see live updates.</p>
+    <p class="hint" style="margin:0 0 18px;font-size:13px;">Everyone uses the <b>same code</b>. Whoever adds the players taps <b>Start new party</b>; everyone else taps <b>Join existing party</b> with that same code to see live updates. Only one phone per court needs to actually tap in the score — everyone else can just glance at their own screen.</p>
     <button class="btn-big" onclick="startNewParty()">🏓 Start new party</button>
     <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="joinExistingParty()">🔗 Join existing party</button>
   </div>
@@ -595,38 +603,20 @@ function initials(name){
 
 // ---------- REMEMBERED PLAYER NAMES ----------
 // A dropdown of names to pick from instead of retyping — starts with the
-// regular group's roster below, and grows with anyone new who's added at
-// setup. Extra names are stored locally per device.
+// regular group's roster below — a fixed, closed list. Nothing else ever
+// gets added to it, no matter what gets typed elsewhere in the app.
 const DEFAULT_PLAYERS = [
   'Aarti','Deepa','Gopi','Kala','Khushboo','Latika','Nancy','Nidhi',
   'Payal','Puja','Rupa','Sangita','Sonal B','Sonal M','Suruchi','Tripti'
 ];
-const KNOWN_PLAYERS_KEY = 'picklePartyKnownPlayers';
 
 function getKnownPlayers(){
-  let extra = [];
-  try{
-    extra = JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
-  }catch(err){
-    extra = [];
-  }
-  const merged = [...new Set([...DEFAULT_PLAYERS, ...extra])];
-  return merged.sort((a,b)=>a.localeCompare(b));
+  return [...DEFAULT_PLAYERS].sort((a,b)=>a.localeCompare(b));
 }
 
-function rememberPlayerNames(names){
-  try{
-    const stored = JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
-    names.forEach(n=>{
-      const trimmed = n.trim();
-      if(trimmed && !DEFAULT_PLAYERS.includes(trimmed) && !stored.includes(trimmed)) stored.push(trimmed);
-    });
-    // keep the most recent 40 extras so the list doesn't grow forever
-    localStorage.setItem(KNOWN_PLAYERS_KEY, JSON.stringify(stored.slice(-40)));
-  }catch(err){
-    // localStorage can fail (private browsing, storage full, etc.) — fine to just skip remembering
-  }
-  populateKnownPlayersList();
+function rememberPlayerNames(){
+  // Intentionally a no-op — the roster is fixed to DEFAULT_PLAYERS above,
+  // so names typed elsewhere never get added to the suggestion list.
 }
 
 function populateKnownPlayersList(){
@@ -882,6 +872,17 @@ document.addEventListener('keydown', e=>{
   if(e.key === 'Escape') closeGuide();
 });
 
+// First time this device has ever opened the app, show the guide automatically
+// once — after that, it's opt-in via the button, same as always.
+try{
+  if(!localStorage.getItem('pickleGuideSeen')){
+    localStorage.setItem('pickleGuideSeen', '1');
+    setTimeout(openGuide, 400); // small delay so it doesn't fight the page's own load
+  }
+}catch(err){
+  // localStorage unavailable — just skip the auto-open, no harm done
+}
+
 function goHome(){
   if(pollTimer) clearInterval(pollTimer);
   if(clockTimer) clearInterval(clockTimer);
@@ -1016,11 +1017,20 @@ function render(){
     const {t1,t2} = pairing[court];
     const card = document.createElement('div');
     card.className = 'court-card' + (isFinal && court==='A' ? ' champ' : '');
+    let whyText;
+    if(isFinal && court==='A'){
+      whyText = '👑 Top 4 by points, gathered here for one last game — no matter who they already played.';
+    } else if(court==='A'){
+      whyText = '⬆️ Win as a pair and you stay here. Lose, and that pair drops to Court B next round.';
+    } else {
+      whyText = '⬇️ Win as a pair here and you move up to Court A next round. Lose, and you stay and reshuffle.';
+    }
     card.innerHTML = `
       <div class="court-head">
         <h4>🎾 Court ${court}</h4>
         <span class="badge">${isFinal && court==='A' ? 'Championship' : (court==='A' ? 'Top court' : 'Challenger court')}</span>
       </div>
+      <div class="court-why">${whyText}</div>
       <div class="court-surface">
         <div class="kitchen-line"></div>
         <div class="kitchen-line bottom"></div>
@@ -1169,6 +1179,19 @@ function showCommentaryBanner(lines){
   el.classList.remove('hidden');
 }
 
+function showMyMoveNotice(movedUp){
+  const el = document.getElementById('commentaryBanner');
+  if(!el) return;
+  const notice = movedUp
+    ? "🎉 You're moving up to Court A — nice game!"
+    : "👋 You're on Court B this round — win it and you'll climb right back.";
+  const div = document.createElement('div');
+  div.className = 'my-move-notice';
+  div.textContent = notice;
+  el.prepend(div);
+  el.classList.remove('hidden');
+}
+
 async function submitRound(){
   const sA1 = currentScores.A[0];
   const sA2 = currentScores.A[1];
@@ -1215,6 +1238,8 @@ async function submitRound(){
 
   if(roundNum >= totalRounds){ finished = true; await saveState(); finishTournament(); return; }
 
+  const myCourtBefore = myPlayerId ? P(myPlayerId).court : null;
+
   if(!isFinal){
     moveLadder(sA1>sA2 ? pairing.A.t2 : pairing.A.t1,
                sB1>sB2 ? pairing.B.t1 : pairing.B.t2);
@@ -1223,6 +1248,12 @@ async function submitRound(){
   roundNum++;
   generatePairing();
   render();
+
+  if(myPlayerId && myCourtBefore && P(myPlayerId).court !== myCourtBefore){
+    const movedUp = P(myPlayerId).court === 'A';
+    showMyMoveNotice(movedUp);
+  }
+
   await saveState();
 }
 
