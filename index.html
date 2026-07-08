@@ -1302,10 +1302,9 @@ function render(){
               <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}${meTag(t1[1])}${serveDot(t1[1],court)}</div>
             </div>
             <div class="score-stepper">
-              <button type="button" class="step-btn" onclick="adjustScore('${court}',0,-1)">−</button>
-              <input class="score-display" id="score-${court}-1" type="number" inputmode="numeric" min="0" value="0"
-                onfocus="this.select()" onchange="setScore('${court}',0,this.value)" oninput="setScore('${court}',0,this.value)">
-              <button type="button" class="step-btn" onclick="adjustScore('${court}',0,1)">+</button>
+              <button type="button" class="step-btn" onpointerdown="startHold(this,'${court}',0,-1)" onpointerup="clearHoldTimers(this)" onpointerleave="clearHoldTimers(this)" onpointercancel="clearHoldTimers(this)">−</button>
+              <div class="score-display" id="score-${court}-1">0</div>
+              <button type="button" class="step-btn" onpointerdown="startHold(this,'${court}',0,1)" onpointerup="clearHoldTimers(this)" onpointerleave="clearHoldTimers(this)" onpointercancel="clearHoldTimers(this)">+</button>
             </div>
           </div>
           <div class="team ${(t2[0]===myPlayerId||t2[1]===myPlayerId)?'is-me':''}">
@@ -1315,10 +1314,9 @@ function render(){
               <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}${meTag(t2[1])}${serveDot(t2[1],court)}</div>
             </div>
             <div class="score-stepper">
-              <button type="button" class="step-btn" onclick="adjustScore('${court}',1,-1)">−</button>
-              <input class="score-display" id="score-${court}-2" type="number" inputmode="numeric" min="0" value="0"
-                onfocus="this.select()" onchange="setScore('${court}',1,this.value)" oninput="setScore('${court}',1,this.value)">
-              <button type="button" class="step-btn" onclick="adjustScore('${court}',1,1)">+</button>
+              <button type="button" class="step-btn" onpointerdown="startHold(this,'${court}',1,-1)" onpointerup="clearHoldTimers(this)" onpointerleave="clearHoldTimers(this)" onpointercancel="clearHoldTimers(this)">−</button>
+              <div class="score-display" id="score-${court}-2">0</div>
+              <button type="button" class="step-btn" onpointerdown="startHold(this,'${court}',1,1)" onpointerup="clearHoldTimers(this)" onpointerleave="clearHoldTimers(this)" onpointercancel="clearHoldTimers(this)">+</button>
             </div>
           </div>
         </div>
@@ -1388,22 +1386,38 @@ function startEditCourtNum(el, court){
 // ---------- SCORING & LADDER MOVEMENT ----------
 let undoSnapshot = null; // lets the last submitted score be reversed if someone mis-tapped
 
+// Press-and-hold on − or + repeats, speeding up the longer you hold — so a
+// close, high-scoring game doesn't mean tapping the same button 10+ times.
+function startHold(btn, court, teamIndex, delta){
+  adjustScore(court, teamIndex, delta); // the tap itself always does one step immediately
+  clearHoldTimers(btn);
+  btn._holdStartDelay = setTimeout(()=>{
+    let speed = 220; // ms between repeats, gets faster over time
+    const tick = ()=>{
+      adjustScore(court, teamIndex, delta);
+      speed = Math.max(50, speed - 20);
+      btn._holdInterval = setTimeout(tick, speed);
+    };
+    tick();
+  }, 400); // small delay so an ordinary quick tap never triggers repeating
+}
+
+function clearHoldTimers(btn){
+  if(btn._holdStartDelay){ clearTimeout(btn._holdStartDelay); btn._holdStartDelay = null; }
+  if(btn._holdInterval){ clearTimeout(btn._holdInterval); btn._holdInterval = null; }
+}
+
 function adjustScore(court, teamIndex, delta){
   const next = Math.max(0, currentScores[court][teamIndex] + delta);
   currentScores[court][teamIndex] = next;
   const el = document.getElementById(`score-${court}-${teamIndex+1}`);
-  if(el) el.value = next;
-}
-
-function setScore(court, teamIndex, rawValue){
-  const n = parseInt(rawValue, 10);
-  currentScores[court][teamIndex] = isNaN(n) ? 0 : Math.max(0, n);
+  if(el) el.textContent = next;
 }
 
 function setWinner(court, teamIndex){
   currentScores[court][teamIndex] = targetScore;
   const el = document.getElementById(`score-${court}-${teamIndex+1}`);
-  if(el) el.value = targetScore;
+  if(el) el.textContent = targetScore;
 
   // Only one team can be "the winner" — tapping one lights it up and dims the other.
   const otherIndex = teamIndex === 0 ? 1 : 0;
