@@ -322,11 +322,11 @@
   .score-display::-webkit-outer-spin-button, .score-display::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .score-display:focus{outline:none;box-shadow:0 0 0 2px rgba(255,46,154,0.6);}
   .win-btn{
-    display:block;width:100%;margin-top:10px;padding:8px 6px;font-size:12.5px;font-weight:800;
-    background:rgba(57,255,106,0.12);border:1px solid rgba(57,255,106,0.4);color:var(--pickle);border-radius:8px;
-    -webkit-tap-highlight-color:transparent;
+    width:36px;height:36px;border-radius:50%;font-size:16px;flex:none;padding:0;margin-left:2px;
+    background:rgba(57,255,106,0.15);border:1px solid rgba(57,255,106,0.45);color:var(--pickle);
+    display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;
   }
-  .win-btn:active{background:rgba(57,255,106,0.3);transform:scale(0.97);}
+  .win-btn:active{background:rgba(57,255,106,0.35);transform:scale(0.9);}
 
   .submit-row{display:flex;justify-content:center;margin-bottom:30px;}
   .submit-row button{padding:15px 30px;font-size:16px;}
@@ -421,10 +421,10 @@
     .team .players{font-size:12.5px;line-height:1.5;}
     .team .paddle{font-size:11px;}
     .me-tag{font-size:9.5px;}
-    .score-stepper{gap:5px;margin-top:8px;}
-    .step-btn{width:32px;height:32px;font-size:16px;flex:none;}
-    .score-display{font-size:20px;width:42px;padding:3px 0;}
-    .win-btn{font-size:11px;padding:7px 4px;margin-top:8px;}
+    .score-stepper{gap:4px;margin-top:8px;}
+    .step-btn{width:28px;height:28px;font-size:14px;flex:none;}
+    .score-display{font-size:17px;width:38px;padding:3px 0;}
+    .win-btn{width:28px;height:28px;font-size:13px;margin-left:0;}
     .submit-row button{width:100%;}
     .final-banner-inner{padding:12px 14px;gap:10px;}
     .final-banner .trophy{font-size:24px;}
@@ -1197,8 +1197,8 @@ function render(){
               <input class="score-display" id="score-${court}-1" type="number" inputmode="numeric" min="0" value="0"
                 onfocus="this.select()" onchange="setScore('${court}',0,this.value)" oninput="setScore('${court}',0,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,1)">+</button>
+              <button type="button" class="win-btn" onclick="setWinner('${court}',0)" title="Set to ${targetScore}">🏆</button>
             </div>
-            <button type="button" class="win-btn" onclick="setWinner('${court}',0)">🏆 Win (${targetScore})</button>
           </div>
           <div class="team ${(t2[0]===myPlayerId||t2[1]===myPlayerId)?'is-me':''}">
             <div class="players">
@@ -1210,8 +1210,8 @@ function render(){
               <input class="score-display" id="score-${court}-2" type="number" inputmode="numeric" min="0" value="0"
                 onfocus="this.select()" onchange="setScore('${court}',1,this.value)" oninput="setScore('${court}',1,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,1)">+</button>
+              <button type="button" class="win-btn" onclick="setWinner('${court}',1)" title="Set to ${targetScore}">🏆</button>
             </div>
-            <button type="button" class="win-btn" onclick="setWinner('${court}',1)">🏆 Win (${targetScore})</button>
           </div>
         </div>
       </div>`;
