@@ -112,6 +112,12 @@
   .choice-icon{font-size:34px;margin-bottom:6px;}
   .choice-title{font-size:16px;font-weight:800;color:var(--ink);}
   .choice-sub{font-size:12.5px;color:var(--ink-dim);font-weight:600;}
+
+  .target-btn{
+    padding:7px 18px;font-size:15px;font-weight:800;border-radius:8px;
+    background:var(--cream-2);border:1px solid rgba(234,246,255,0.14);color:var(--ink-dim);
+  }
+  .target-btn.active{background:rgba(255,46,154,0.15);border-color:var(--sun);color:var(--ink);}
   .sync-check-banner{
     font-size:12.5px;font-weight:600;border-radius:10px;padding:9px 12px;margin:10px 0 4px;
     display:flex;align-items:center;gap:8px;
@@ -294,6 +300,12 @@
   }
   .score-display::-webkit-outer-spin-button, .score-display::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .score-display:focus{outline:none;box-shadow:0 0 0 2px rgba(255,46,154,0.6);}
+  .win-btn{
+    display:block;width:100%;margin-top:10px;padding:8px 6px;font-size:12.5px;font-weight:800;
+    background:rgba(57,255,106,0.12);border:1px solid rgba(57,255,106,0.4);color:var(--pickle);border-radius:8px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .win-btn:active{background:rgba(57,255,106,0.3);transform:scale(0.97);}
 
   .submit-row{display:flex;justify-content:center;margin-bottom:30px;}
   .submit-row button{padding:15px 30px;font-size:16px;}
@@ -391,6 +403,7 @@
     .score-stepper{gap:5px;margin-top:8px;}
     .step-btn{width:32px;height:32px;font-size:16px;flex:none;}
     .score-display{font-size:20px;width:42px;padding:3px 0;}
+    .win-btn{font-size:11px;padding:7px 4px;margin-top:8px;}
     .submit-row button{width:100%;}
     .final-banner-inner{padding:12px 14px;gap:10px;}
     .final-banner .trophy{font-size:24px;}
@@ -449,6 +462,11 @@
       <div class="row-opts">
         <label>Number of games:</label>
         <input type="number" id="totalRounds" value="8" min="3" max="20">
+      </div>
+      <div class="row-opts">
+        <label>Games to:</label>
+        <button type="button" id="target11Btn" class="target-btn active" onclick="setTargetScore(11)">11</button>
+        <button type="button" id="target15Btn" class="target-btn" onclick="setTargetScore(15)">15</button>
       </div>
       <div class="row-opts" style="margin-bottom:10px;">
         <label>Party code:</label>
@@ -598,6 +616,7 @@ let finished = false;
 let partyStartedAt = null; // when this party's first game began — used for the elapsed-time readout
 let clockTimer = null;
 let courtNumbers = { A:'', B:'' }; // the facility's actual physical court numbers, tap-to-edit on the court card
+let targetScore = 11; // games-to-11 or games-to-15, chosen at setup
 
 let partyCode = null;
 let storageOk = null;      // null = unknown, true/false once tested
@@ -695,7 +714,7 @@ populateKnownPlayersList();
 const API_BASE = '/.netlify/functions/party';
 
 function snapshotState(){
-  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, courtNumbers, savedAt: Date.now() };
+  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, courtNumbers, targetScore, savedAt: Date.now() };
 }
 
 // Runs once on page load, independent of any party code, so we know right away
@@ -766,6 +785,7 @@ function applyRemoteState(s){
   finished = !!s.finished;
   partyStartedAt = s.partyStartedAt || partyStartedAt;
   courtNumbers = s.courtNumbers || courtNumbers;
+  targetScore = s.targetScore || targetScore;
 }
 
 function updateSyncBadge(){
@@ -874,6 +894,12 @@ async function joinExistingParty(){
   } else {
     alert(`No party found yet with code ${partyCode}. Double-check the code with the other player, or use "I'm starting a new game" instead.`);
   }
+}
+
+function setTargetScore(n){
+  targetScore = n;
+  document.getElementById('target11Btn').classList.toggle('active', n===11);
+  document.getElementById('target15Btn').classList.toggle('active', n===15);
 }
 
 function chooseRole(role){
@@ -1136,6 +1162,7 @@ function render(){
                 onfocus="this.select()" onchange="setScore('${court}',0,this.value)" oninput="setScore('${court}',0,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,1)">+</button>
             </div>
+            <button type="button" class="win-btn" onclick="setWinner('${court}',0)">🏆 Win (${targetScore})</button>
           </div>
           <div class="team ${(t2[0]===myPlayerId||t2[1]===myPlayerId)?'is-me':''}">
             <div class="players">
@@ -1148,6 +1175,7 @@ function render(){
                 onfocus="this.select()" onchange="setScore('${court}',1,this.value)" oninput="setScore('${court}',1,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,1)">+</button>
             </div>
+            <button type="button" class="win-btn" onclick="setWinner('${court}',1)">🏆 Win (${targetScore})</button>
           </div>
         </div>
       </div>`;
@@ -1226,6 +1254,12 @@ function adjustScore(court, teamIndex, delta){
 function setScore(court, teamIndex, rawValue){
   const n = parseInt(rawValue, 10);
   currentScores[court][teamIndex] = isNaN(n) ? 0 : Math.max(0, n);
+}
+
+function setWinner(court, teamIndex){
+  currentScores[court][teamIndex] = targetScore;
+  const el = document.getElementById(`score-${court}-${teamIndex+1}`);
+  if(el) el.value = targetScore;
 }
 
 // ---------- COMMENTARY ENGINE ----------
