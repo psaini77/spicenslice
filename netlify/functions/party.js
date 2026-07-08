@@ -1,5 +1,20 @@
 const { getStore } = require('@netlify/blobs');
 
+function getPartyStore(){
+  // Netlify normally injects the Blobs context automatically, but that
+  // occasionally fails on fresh sites (a known Netlify platform issue). If
+  // we've been given an explicit site ID + token via environment variables,
+  // use those instead - this always works regardless of the auto-injection bug.
+  if (process.env.BLOBS_SITE_ID && process.env.BLOBS_TOKEN) {
+    return getStore({
+      name: 'pickle-party',
+      siteID: process.env.BLOBS_SITE_ID,
+      token: process.env.BLOBS_TOKEN
+    });
+  }
+  return getStore('pickle-party');
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -19,9 +34,9 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Missing ?code=' }) };
   }
 
-  const store = getStore('pickle-party');
-
   try {
+    const store = getPartyStore();
+
     if (event.httpMethod === 'GET') {
       const data = await store.get(code, { type: 'json' });
       return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(data || null) };
@@ -41,7 +56,6 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
   } catch (err) {
     console.error('party function error:', err);
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Storage error' }) };
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Storage error: ' + err.message }) };
   }
 };
-
