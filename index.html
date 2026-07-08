@@ -97,6 +97,21 @@
     box-shadow:0 1px 2px rgba(0,0,0,0.4), 0 0 30px rgba(0,229,255,0.08);
   }
   .setup-card h2{font-size:28px;color:var(--sun);margin-bottom:4px;text-shadow:0 0 14px rgba(255,46,154,0.35);}
+
+  .back-to-vote-btn{margin-bottom:14px;font-size:12.5px;padding:7px 12px;}
+
+  .choice-row{display:flex;gap:12px;margin-top:16px;}
+  @media(max-width:480px){.choice-row{flex-direction:column;}}
+  .choice-card{
+    flex:1;background:var(--cream-2);border:1px solid rgba(234,246,255,0.12);border-radius:16px;
+    padding:22px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .choice-card:hover{border-color:var(--sun);transform:translateY(-2px);}
+  .choice-card:active{transform:translateY(0);}
+  .choice-icon{font-size:34px;margin-bottom:6px;}
+  .choice-title{font-size:16px;font-weight:800;color:var(--ink);}
+  .choice-sub{font-size:12.5px;color:var(--ink-dim);font-weight:600;}
   .sync-check-banner{
     font-size:12.5px;font-weight:600;border-radius:10px;padding:9px 12px;margin:10px 0 4px;
     display:flex;align-items:center;gap:8px;
@@ -404,22 +419,57 @@
 
   <!-- SETUP SCREEN -->
   <div id="setup" class="setup-card">
-    <h2>Who's playing today?</h2>
-    <div id="syncCheckBanner" class="sync-check-banner"></div>
-    <p class="hint">Type in all 8 names to get the party started (start typing and pick from suggestions if you've played before). Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
-    <div class="name-grid" id="nameGrid"></div>
-    <datalist id="knownPlayers"></datalist>
-    <div class="row-opts">
-      <label>Number of games:</label>
-      <input type="number" id="totalRounds" value="8" min="3" max="20">
+
+    <!-- STEP 1: which one are you? -->
+    <div id="roleChoice">
+      <h2>Who's playing today?</h2>
+      <div id="syncCheckBanner" class="sync-check-banner"></div>
+      <p class="hint">First, one quick question:</p>
+      <div class="choice-row">
+        <button class="choice-card" onclick="chooseRole('new')">
+          <div class="choice-icon">🆕</div>
+          <div class="choice-title">I'm starting a new game</div>
+          <div class="choice-sub">I'll add the players</div>
+        </button>
+        <button class="choice-card" onclick="chooseRole('join')">
+          <div class="choice-icon">🔗</div>
+          <div class="choice-title">I'm joining a game</div>
+          <div class="choice-sub">Someone already started it</div>
+        </button>
+      </div>
     </div>
-    <div class="row-opts" style="margin-bottom:10px;">
-      <label>Party code:</label>
-      <input type="text" id="partyCode" maxlength="6" autocapitalize="characters" autocomplete="off" style="width:110px;text-transform:uppercase;letter-spacing:0.1em;">
+
+    <!-- STEP 2a: starting a new game -->
+    <div id="newGameForm" class="hidden">
+      <button class="btn-ghost back-to-vote-btn" onclick="showRoleChoice()">← Back</button>
+      <h2>Add the players</h2>
+      <p class="hint">Type in all 8 names to get the party started (start typing and pick from suggestions if you've played before). Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
+      <div class="name-grid" id="nameGrid"></div>
+      <datalist id="knownPlayers"></datalist>
+      <div class="row-opts">
+        <label>Number of games:</label>
+        <input type="number" id="totalRounds" value="8" min="3" max="20">
+      </div>
+      <div class="row-opts" style="margin-bottom:10px;">
+        <label>Party code:</label>
+        <input type="text" id="partyCode" maxlength="6" autocapitalize="characters" autocomplete="off" style="width:110px;text-transform:uppercase;letter-spacing:0.1em;">
+      </div>
+      <p class="hint" style="margin:0 0 18px;font-size:13px;">Share this code with the group afterward so everyone else can tap "I'm joining a game." Only one phone per court needs to actually tap in the score — everyone else can just glance at their own screen.</p>
+      <button class="btn-big" onclick="startNewParty()">🏓 Start new party</button>
     </div>
-    <p class="hint" style="margin:0 0 18px;font-size:13px;">Everyone uses the <b>same code</b>. Whoever adds the players taps <b>Start new party</b>; everyone else taps <b>Join existing party</b> with that same code to see live updates. Only one phone per court needs to actually tap in the score — everyone else can just glance at their own screen.</p>
-    <button class="btn-big" onclick="startNewParty()">🏓 Start new party</button>
-    <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="joinExistingParty()">🔗 Join existing party</button>
+
+    <!-- STEP 2b: joining an existing game -->
+    <div id="joinGameForm" class="hidden">
+      <button class="btn-ghost back-to-vote-btn" onclick="showRoleChoice()">← Back</button>
+      <h2>Enter the party code</h2>
+      <p class="hint">Ask whoever set up today's game for their code, then type it in below.</p>
+      <div class="row-opts" style="margin-bottom:18px;">
+        <label>Party code:</label>
+        <input type="text" id="partyCodeJoin" maxlength="6" autocapitalize="characters" autocomplete="off" style="width:140px;text-transform:uppercase;letter-spacing:0.12em;font-size:20px;">
+      </div>
+      <button class="btn-big" onclick="joinExistingParty()">🔗 Join existing party</button>
+    </div>
+
   </div>
 
   <!-- MAIN VIEW -->
@@ -464,7 +514,8 @@
     <h2>🎉 That's a wrap!</h2>
     <div class="champ-name" id="champName"></div>
     <div class="board-list" id="finalStandings" style="text-align:left;margin:20px 0;"></div>
-    <button class="btn-ghost" onclick="location.reload()">Start a new party</button>
+    <button class="btn-big" onclick="shareRecapCard()">📸 Share recap card</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="location.reload()">Start a new party</button>
   </div>
 
   <footer class="note">Scores sync live to everyone using the same party code, right from this page — no app or account needed.</footer>
@@ -806,7 +857,7 @@ async function startNewParty(){
 }
 
 async function joinExistingParty(){
-  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const codeInput = document.getElementById('partyCodeJoin').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!codeInput){ alert('Type the party code the other player is using first.'); return; }
   partyCode = codeInput;
 
@@ -821,8 +872,26 @@ async function joinExistingParty(){
   if(storageOk === false){
     alert("Couldn't reach live sync right now. Make sure everyone is using the same live website URL (not a downloaded copy of the file), and that the site's sync function is deployed correctly.");
   } else {
-    alert(`No party found yet with code ${partyCode}. Double-check the code with the other player, or use "Start new party" instead.`);
+    alert(`No party found yet with code ${partyCode}. Double-check the code with the other player, or use "I'm starting a new game" instead.`);
   }
+}
+
+function chooseRole(role){
+  document.getElementById('roleChoice').classList.add('hidden');
+  document.getElementById('newGameForm').classList.add('hidden');
+  document.getElementById('joinGameForm').classList.add('hidden');
+  if(role === 'new'){
+    document.getElementById('newGameForm').classList.remove('hidden');
+  } else {
+    document.getElementById('joinGameForm').classList.remove('hidden');
+    document.getElementById('partyCodeJoin').focus();
+  }
+}
+
+function showRoleChoice(){
+  document.getElementById('newGameForm').classList.add('hidden');
+  document.getElementById('joinGameForm').classList.add('hidden');
+  document.getElementById('roleChoice').classList.remove('hidden');
 }
 
 async function enterMainScreen(){
@@ -906,10 +975,17 @@ function goHome(){
   document.getElementById('endPartyBtn').classList.add('hidden');
   document.getElementById('clockBadge').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
-  // pre-fill so re-entering the same code just rejoins where things left off
-  if(partyCode) document.getElementById('partyCode').value = partyCode;
+  // Home should get you back INTO the same party — that's the Join path now,
+  // not the Start-a-new-game path, so route there directly with the code ready.
+  document.getElementById('partyCode').value = partyCode || randomCode();
   players.forEach((p,i)=>{ const inp = document.getElementById('name'+i); if(inp) inp.value = p.name; });
   if(totalRounds) document.getElementById('totalRounds').value = totalRounds;
+  if(partyCode){
+    document.getElementById('partyCodeJoin').value = partyCode;
+    chooseRole('join');
+  } else {
+    showRoleChoice();
+  }
 }
 
 // ---------- PAIRING LOGIC ----------
@@ -1366,6 +1442,124 @@ function spawnConfetti(container){
     container.appendChild(c);
     setTimeout(()=>c.remove(), 4000);
   }
+}
+
+// ---------- SHAREABLE RECAP CARD ----------
+// Drawn straight onto a <canvas> — no image library, no external service,
+// works fully offline. Produces a PNG ready to drop into a group chat.
+function generateRecapCanvas(){
+  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+  const width = 720;
+  const rowH = 68;
+  const headerH = 230;
+  const footerH = 60;
+  const height = headerH + sorted.length*rowH + footerH;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const FONT = 'Manrope, Arial, sans-serif';
+
+  // background
+  const bg = ctx.createLinearGradient(0,0,0,height);
+  bg.addColorStop(0, '#161a24');
+  bg.addColorStop(1, '#0b0e14');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,width,height);
+
+  // header
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#39FF6A';
+  ctx.font = `800 38px ${FONT}`;
+  ctx.fillText('🥒 PICKLE PARTY', width/2, 56);
+
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 16px ${FONT}`;
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+  ctx.fillText('Final Results  •  ' + dateLabel, width/2, 84);
+
+  // champion block
+  const champ = sorted[0];
+  ctx.fillStyle = '#FF2E9A';
+  ctx.font = `800 20px ${FONT}`;
+  ctx.fillText('🏆 CHAMPION', width/2, 134);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 32px ${FONT}`;
+  ctx.fillText(champ.name, width/2, 172);
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 15px ${FONT}`;
+  ctx.fillText(`${Math.round(champ.rating)} pts  •  ${champ.wins}-${champ.losses}`, width/2, 196);
+
+  // divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.moveTo(40, headerH-14);
+  ctx.lineTo(width-40, headerH-14);
+  ctx.stroke();
+
+  // standings rows
+  const medals = ['🥇','🥈','🥉'];
+  sorted.forEach((p,i)=>{
+    const y = headerH + i*rowH;
+    if(i % 2 === 0){
+      ctx.fillStyle = 'rgba(255,255,255,0.035)';
+      ctx.fillRect(20, y, width-40, rowH);
+    }
+    const midY = y + rowH/2;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = i<3 ? '#FFD700' : '#8fa0ae';
+    ctx.font = `800 20px ${FONT}`;
+    ctx.fillText(i<3 ? medals[i] : ('#'+(i+1)), 38, midY+7);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 20px ${FONT}`;
+    ctx.fillText(p.name, 92, midY+7);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#39FF6A';
+    ctx.font = `800 20px ${FONT}`;
+    ctx.fillText(`${Math.round(p.rating)} pts`, width-38, midY+2);
+    ctx.fillStyle = '#8fa0ae';
+    ctx.font = `600 13px ${FONT}`;
+    ctx.fillText(`${p.wins}-${p.losses}`, width-38, midY+20);
+  });
+
+  // footer
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('🏓 See you next time!', width/2, height-24);
+
+  return canvas;
+}
+
+function shareRecapCard(){
+  const canvas = generateRecapCanvas();
+  canvas.toBlob(async (blob)=>{
+    if(!blob) return;
+    const file = new File([blob], 'pickle-party-results.png', { type: 'image/png' });
+
+    if(navigator.canShare && navigator.canShare({ files: [file] })){
+      try{
+        await navigator.share({ files: [file], title: 'Pickle Party Results' });
+        return;
+      }catch(err){
+        // user cancelled the share sheet, or it failed — fall through to download instead
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pickle-party-results.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    alert('Saved! Find "pickle-party-results.png" in your downloads to share it.');
+  }, 'image/png');
 }
 </script>
 </body>
