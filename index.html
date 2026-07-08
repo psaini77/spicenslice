@@ -703,7 +703,10 @@ async function readDataFile(){
   if(res.status === 404){
     return { data: {}, sha: null };
   }
-  if(!res.ok) throw new Error('GitHub read failed: ' + res.status);
+  if(!res.ok){
+    const detail = await res.json().catch(()=>({}));
+    throw new Error(`GitHub read failed (${res.status}): ${detail.message || 'unknown error'}`);
+  }
   const json = await res.json();
   const data = JSON.parse(base64ToUtf8(json.content));
   return { data, sha: json.sha };
@@ -728,7 +731,10 @@ async function writeDataFile(mutateFn, attempt=0){
   if(res.status === 409 && attempt < 2){
     return writeDataFile(mutateFn, attempt + 1); // someone else wrote first — retry with fresh data
   }
-  if(!res.ok) throw new Error('GitHub write failed: ' + res.status);
+  if(!res.ok){
+    const detail = await res.json().catch(()=>({}));
+    throw new Error(`GitHub write failed (${res.status}): ${detail.message || 'unknown error'}`);
+  }
   return updated;
 }
 
@@ -1398,7 +1404,7 @@ async function submitVote(){
       return data;
     });
   }catch(err){
-    alert("Couldn't save your vote — check that live sync is set up correctly (see the banner above).");
+    alert("Couldn't save your vote:\n\n" + err.message);
     console.error('Vote save failed:', err);
     return;
   }
