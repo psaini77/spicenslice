@@ -493,6 +493,7 @@
     <div class="hero-right">
       <button class="btn-ghost home-btn" onclick="openGuide()" title="How scoring & pairing works">❓<span class="btn-label"> How this works</span></button>
       <button id="homeBtn" class="btn-ghost home-btn hidden" onclick="goHome()" title="Back to first page">🏠<span class="btn-label"> Home</span></button>
+      <button id="shareLinkBtn" class="btn-ghost home-btn hidden" onclick="shareJoinLink()" title="Share a one-tap join link">📤<span class="btn-label"> Invite link</span></button>
       <div id="clockBadge" class="clock-badge hidden"></div>
       <div id="gamePill" class="game-pill hidden"></div>
       <div id="syncBadge" class="sync-badge hidden"></div>
@@ -830,6 +831,22 @@ async function testStorageConnection(){
 }
 testStorageConnection();
 
+// If this page was opened via a shared "?code=XXXX" link (e.g. from the group
+// chat), skip straight to joining — no need to even see the Start/Join choice.
+(function checkUrlForJoinCode(){
+  const codeFromUrl = new URLSearchParams(location.search).get('code');
+  if(!codeFromUrl) return;
+  const clean = codeFromUrl.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if(!clean) return;
+  setTimeout(async ()=>{
+    document.getElementById('partyCodeJoin').value = clean;
+    chooseRole('join');
+    await joinExistingParty();
+    // tidy the address bar so a later refresh/share from this tab doesn't carry someone else's code
+    history.replaceState({}, '', location.pathname);
+  }, 300);
+})();
+
 async function saveState(){
   if(!partyCode) return;
   try{
@@ -992,6 +1009,24 @@ function autoJoinCheck(input){
   }, 250);
 }
 
+function shareJoinLink(){
+  if(!partyCode) return;
+  const url = `${location.origin}${location.pathname}?code=${partyCode}`;
+  const msg = `🥒 Join our Pickle Party! Tap this link and you're in: ${url}`;
+
+  if(navigator.share){
+    navigator.share({ title: 'Pickle Party', text: msg, url }).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>{
+      alert('Link copied! Paste it into your group chat — tapping it drops everyone straight in, no code to type.');
+    }).catch(()=>{
+      prompt('Copy this link:', url);
+    });
+  } else {
+    prompt('Copy this link:', url);
+  }
+}
+
 function chooseRole(role){
   document.getElementById('roleChoice').classList.add('hidden');
   document.getElementById('newGameForm').classList.add('hidden');
@@ -1019,6 +1054,7 @@ async function enterMainScreen(){
   document.getElementById('homeBtn').classList.remove('hidden');
   document.getElementById('syncNowBtn').classList.remove('hidden');
   document.getElementById('endPartyBtn').classList.remove('hidden');
+  document.getElementById('shareLinkBtn').classList.remove('hidden');
   document.getElementById('clockBadge').classList.remove('hidden');
   document.getElementById('commentaryBanner').classList.add('hidden');
   startClock();
@@ -1089,6 +1125,7 @@ function goHome(){
   document.getElementById('homeBtn').classList.add('hidden');
   document.getElementById('syncNowBtn').classList.add('hidden');
   document.getElementById('endPartyBtn').classList.add('hidden');
+  document.getElementById('shareLinkBtn').classList.add('hidden');
   document.getElementById('clockBadge').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
   // Home should get you back INTO the same party — that's the Join path now,
