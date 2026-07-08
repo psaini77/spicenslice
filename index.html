@@ -299,7 +299,7 @@
   .teams{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1;}
   .team{
     background:rgba(11,14,20,0.75);backdrop-filter:blur(2px);border-radius:12px;padding:12px 10px;text-align:center;
-    border:1px solid rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.12);position:relative;
   }
   .team.is-me{border-color:var(--sun);box-shadow:0 0 0 1px var(--sun), 0 0 14px rgba(255,46,154,0.3);}
   .team .players{font-family:'Manrope';font-weight:700;font-size:16px;line-height:1.7;color:var(--ink);}
@@ -322,11 +322,12 @@
   .score-display::-webkit-outer-spin-button, .score-display::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .score-display:focus{outline:none;box-shadow:0 0 0 2px rgba(255,46,154,0.6);}
   .win-btn{
-    width:36px;height:36px;border-radius:50%;font-size:16px;flex:none;padding:0;margin-left:2px;
-    background:rgba(57,255,106,0.15);border:1px solid rgba(57,255,106,0.45);color:var(--pickle);
+    position:absolute;top:-8px;right:-8px;width:32px;height:32px;border-radius:50%;font-size:15px;padding:0;
+    background:linear-gradient(160deg,#39FF6A,#1ed156);border:2px solid var(--card);color:#0B0E14;
     display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;
+    box-shadow:0 3px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(57,255,106,0.3);z-index:2;
   }
-  .win-btn:active{background:rgba(57,255,106,0.35);transform:scale(0.9);}
+  .win-btn:active{transform:scale(0.88);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
 
   .submit-row{display:flex;justify-content:center;margin-bottom:30px;}
   .submit-row button{padding:15px 30px;font-size:16px;}
@@ -421,10 +422,10 @@
     .team .players{font-size:12.5px;line-height:1.5;}
     .team .paddle{font-size:11px;}
     .me-tag{font-size:9.5px;}
-    .score-stepper{gap:4px;margin-top:8px;}
-    .step-btn{width:28px;height:28px;font-size:14px;flex:none;}
-    .score-display{font-size:17px;width:38px;padding:3px 0;}
-    .win-btn{width:28px;height:28px;font-size:13px;margin-left:0;}
+    .score-stepper{gap:5px;margin-top:8px;}
+    .step-btn{width:32px;height:32px;font-size:16px;flex:none;}
+    .score-display{font-size:20px;width:42px;padding:3px 0;}
+    .win-btn{width:26px;height:26px;font-size:12px;top:-6px;right:-6px;}
     .submit-row button{width:100%;}
     .final-banner-inner{padding:12px 14px;gap:10px;}
     .final-banner .trophy{font-size:24px;}
@@ -1188,6 +1189,7 @@ function render(){
         <div class="kitchen-line bottom"></div>
         <div class="teams">
           <div class="team ${(t1[0]===myPlayerId||t1[1]===myPlayerId)?'is-me':''}">
+            <button type="button" class="win-btn" onclick="setWinner('${court}',0)" title="Set to ${targetScore}">🏆</button>
             <div class="players">
               <div class="pl"><span class="paddle">🏓</span>${editableName(t1[0])}${meTag(t1[0])}</div>
               <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}${meTag(t1[1])}</div>
@@ -1197,10 +1199,10 @@ function render(){
               <input class="score-display" id="score-${court}-1" type="number" inputmode="numeric" min="0" value="0"
                 onfocus="this.select()" onchange="setScore('${court}',0,this.value)" oninput="setScore('${court}',0,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,1)">+</button>
-              <button type="button" class="win-btn" onclick="setWinner('${court}',0)" title="Set to ${targetScore}">🏆</button>
             </div>
           </div>
           <div class="team ${(t2[0]===myPlayerId||t2[1]===myPlayerId)?'is-me':''}">
+            <button type="button" class="win-btn" onclick="setWinner('${court}',1)" title="Set to ${targetScore}">🏆</button>
             <div class="players">
               <div class="pl"><span class="paddle">🏓</span>${editableName(t2[0])}${meTag(t2[0])}</div>
               <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}${meTag(t2[1])}</div>
@@ -1210,7 +1212,6 @@ function render(){
               <input class="score-display" id="score-${court}-2" type="number" inputmode="numeric" min="0" value="0"
                 onfocus="this.select()" onchange="setScore('${court}',1,this.value)" oninput="setScore('${court}',1,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,1)">+</button>
-              <button type="button" class="win-btn" onclick="setWinner('${court}',1)" title="Set to ${targetScore}">🏆</button>
             </div>
           </div>
         </div>
