@@ -234,9 +234,12 @@
   }
   .step-btn:active{transform:scale(0.92);background:rgba(255,46,154,0.4);}
   .score-display{
-    min-width:52px;text-align:center;font-family:'Space Mono',monospace;font-size:30px;font-weight:700;
-    color:var(--ink);user-select:none;
+    width:64px;text-align:center;font-family:'Space Mono',monospace;font-size:30px;font-weight:700;
+    color:var(--ink);background:rgba(11,14,20,0.55);border:1px solid rgba(255,255,255,0.25);border-radius:10px;
+    padding:4px 0;-moz-appearance:textfield;
   }
+  .score-display::-webkit-outer-spin-button, .score-display::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .score-display:focus{outline:none;box-shadow:0 0 0 2px rgba(255,46,154,0.6);}
 
   .submit-row{display:flex;justify-content:center;margin-bottom:30px;}
   .submit-row button{padding:15px 30px;font-size:16px;}
@@ -284,11 +287,15 @@
     .board-row .pts{font-size:14px;}
     .courts-heading, .scoreboard > h3, .recap h3{font-size:18px;}
     .courts{gap:12px;margin-bottom:18px;}
-    .court-surface{margin:0 10px 10px;padding:12px 10px;}
-    .team{padding:8px;}
-    .team .players{font-size:14px;}
-    .step-btn{width:48px;height:48px;font-size:24px;}
-    .score-display{font-size:32px;min-width:46px;}
+    .court-surface{margin:0 8px 8px;padding:10px 6px;}
+    .teams{gap:6px;}
+    .team{padding:8px 4px;}
+    .team .players{font-size:12.5px;line-height:1.5;}
+    .team .paddle{font-size:11px;}
+    .me-tag{font-size:9.5px;}
+    .score-stepper{gap:5px;margin-top:8px;}
+    .step-btn{width:32px;height:32px;font-size:16px;flex:none;}
+    .score-display{font-size:20px;width:42px;padding:3px 0;}
     .submit-row button{width:100%;}
     .final-banner-inner{padding:12px 14px;gap:10px;}
     .final-banner .trophy{font-size:24px;}
@@ -830,7 +837,8 @@ function render(){
             </div>
             <div class="score-stepper">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,-1)">−</button>
-              <div class="score-display" id="score-${court}-1">0</div>
+              <input class="score-display" id="score-${court}-1" type="number" inputmode="numeric" min="0" value="0"
+                onfocus="this.select()" onchange="setScore('${court}',0,this.value)" oninput="setScore('${court}',0,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,1)">+</button>
             </div>
           </div>
@@ -841,7 +849,8 @@ function render(){
             </div>
             <div class="score-stepper">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,-1)">−</button>
-              <div class="score-display" id="score-${court}-2">0</div>
+              <input class="score-display" id="score-${court}-2" type="number" inputmode="numeric" min="0" value="0"
+                onfocus="this.select()" onchange="setScore('${court}',1,this.value)" oninput="setScore('${court}',1,this.value)">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,1)">+</button>
             </div>
           </div>
@@ -891,7 +900,12 @@ function adjustScore(court, teamIndex, delta){
   const next = Math.max(0, currentScores[court][teamIndex] + delta);
   currentScores[court][teamIndex] = next;
   const el = document.getElementById(`score-${court}-${teamIndex+1}`);
-  if(el) el.textContent = next;
+  if(el) el.value = next;
+}
+
+function setScore(court, teamIndex, rawValue){
+  const n = parseInt(rawValue, 10);
+  currentScores[court][teamIndex] = isNaN(n) ? 0 : Math.max(0, n);
 }
 
 async function submitRound(){
