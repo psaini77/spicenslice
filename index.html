@@ -50,6 +50,10 @@
   .hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .home-btn{padding:8px 14px;font-size:13px;white-space:nowrap;}
   .sync-now-btn{padding:8px 11px;font-size:14px;line-height:1;}
+  .clock-badge{
+    font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--ink-dim);
+    background:var(--card);border:1px solid rgba(234,246,255,0.14);border-radius:999px;padding:8px 14px;white-space:nowrap;
+  }
   .hero .mascot{
     font-size:40px;display:inline-block;animation:float 3s ease-in-out infinite;
   }
@@ -141,6 +145,8 @@
   .board-row.top3{background:rgba(255,46,154,0.05);}
   .board-row .rank{color:var(--ink-dim);font-family:'Space Mono';font-weight:700;font-size:13px;text-align:center;}
   .board-row .rank .medal{font-size:16px;}
+  .board-row.is-me{background:rgba(255,46,154,0.06);box-shadow:inset 3px 0 0 var(--sun);}
+  .me-tag{font-size:10.5px;font-weight:700;color:var(--sun);white-space:nowrap;}
   .board-row .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0B0E14;font-size:13px;font-family:'Manrope';font-weight:700;flex:none;}
   .board-row .info{min-width:0;}
   .board-row .info .pname{font-weight:700;font-size:15.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -214,6 +220,7 @@
     background:rgba(11,14,20,0.75);backdrop-filter:blur(2px);border-radius:12px;padding:12px 10px;text-align:center;
     border:1px solid rgba(255,255,255,0.12);
   }
+  .team.is-me{border-color:var(--sun);box-shadow:0 0 0 1px var(--sun), 0 0 14px rgba(255,46,154,0.3);}
   .team .players{font-family:'Manrope';font-weight:700;font-size:16px;line-height:1.7;color:var(--ink);}
   .team .players .pl{display:flex;align-items:center;justify-content:center;gap:6px;}
   .team .paddle{font-size:14px;}
@@ -299,9 +306,11 @@
     </div>
     <div class="hero-right">
       <button id="homeBtn" class="btn-ghost home-btn hidden" onclick="goHome()" title="Back to first page">🏠 Home</button>
+      <div id="clockBadge" class="clock-badge hidden"></div>
       <div id="gamePill" class="game-pill hidden"></div>
       <div id="syncBadge" class="sync-badge hidden"></div>
       <button id="syncNowBtn" class="btn-ghost sync-now-btn hidden" onclick="manualSync()" title="Pull the latest scores now">🔄</button>
+      <button id="endPartyBtn" class="btn-ghost home-btn hidden" onclick="endPartyNow()" title="Finish now and show final standings">🏁 End party</button>
     </div>
   </div>
 
@@ -338,17 +347,20 @@
       </div>
     </div>
 
-    <div class="scoreboard">
-      <h3>🏆 Scoreboard</h3>
-      <div class="hint-row">✎ tap any name to fix a typo — here or right on the courts below</div>
-      <div class="board-list" id="boardList"></div>
-    </div>
-
     <h3 class="courts-heading">🎾 On the courts</h3>
     <div class="courts" id="courtsWrap"></div>
 
     <div class="submit-row">
       <button class="btn-big" id="submitBtn" onclick="submitRound()">✅ Submit scores &amp; shuffle courts</button>
+    </div>
+    <div class="submit-row" style="margin-top:-16px;">
+      <button class="btn-ghost" id="undoBtn" onclick="undoLastSubmit()" style="display:none;">↩️ Undo last submission</button>
+    </div>
+
+    <div class="scoreboard">
+      <h3>🏆 Scoreboard</h3>
+      <div class="hint-row">✎ tap a name to fix a typo &middot; 📍 tap an avatar to mark yourself</div>
+      <div class="board-list" id="boardList"></div>
     </div>
 
     <div class="recap">
@@ -361,7 +373,7 @@
   <div id="done" class="setup-card done-card hidden">
     <h2>🎉 That's a wrap!</h2>
     <div class="champ-name" id="champName"></div>
-    <p style="color:var(--ink-dim);font-weight:700;">Full standings are on the scoreboard from the last game — go grab that trophy (or the bragging rights).</p>
+    <div class="board-list" id="finalStandings" style="text-align:left;margin:20px 0;"></div>
     <button class="btn-ghost" onclick="location.reload()">Start a new party</button>
   </div>
 
@@ -380,6 +392,8 @@ let currentScores = { A:[0,0], B:[0,0] }; // live tap-stepper scores for the rou
 let history = [];
 let isFinal = false;
 let finished = false;
+let partyStartedAt = null; // when this party's first game began — used for the elapsed-time readout
+let clockTimer = null;
 
 let partyCode = null;
 let storageOk = null;      // null = unknown, true/false once tested
@@ -454,7 +468,7 @@ populateKnownPlayersList();
 const API_BASE = '/.netlify/functions/party';
 
 function snapshotState(){
-  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, savedAt: Date.now() };
+  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, savedAt: Date.now() };
 }
 
 // Runs once on page load, independent of any party code, so we know right away
@@ -523,6 +537,7 @@ function applyRemoteState(s){
   players = s.players; roundNum = s.roundNum; totalRounds = s.totalRounds;
   pairing = s.pairing; lastPairKey = s.lastPairKey; history = s.history; isFinal = s.isFinal;
   finished = !!s.finished;
+  partyStartedAt = s.partyStartedAt || partyStartedAt;
 }
 
 function updateSyncBadge(){
@@ -596,6 +611,7 @@ async function startNewParty(){
     }));
     generatePairing();
     rememberPlayerNames(names);
+    partyStartedAt = Date.now();
   }
 
   await enterMainScreen();
@@ -622,11 +638,16 @@ async function joinExistingParty(){
 }
 
 async function enterMainScreen(){
+  undoSnapshot = null; // a fresh entry into a party (new or rejoined) has nothing local to undo yet
+  myPlayerId = loadMyId();
   document.getElementById('setup').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
   document.getElementById('gamePill').classList.remove('hidden');
   document.getElementById('homeBtn').classList.remove('hidden');
   document.getElementById('syncNowBtn').classList.remove('hidden');
+  document.getElementById('endPartyBtn').classList.remove('hidden');
+  document.getElementById('clockBadge').classList.remove('hidden');
+  startClock();
 
   if(finished){
     render();
@@ -638,14 +659,38 @@ async function enterMainScreen(){
   startPolling();
 }
 
+function startClock(){
+  if(clockTimer) clearInterval(clockTimer);
+  updateClock();
+  clockTimer = setInterval(updateClock, 15000);
+}
+
+function updateClock(){
+  const el = document.getElementById('clockBadge');
+  if(!partyStartedAt){ el.textContent = '⏱ 0 min'; return; }
+  const mins = Math.max(0, Math.round((Date.now() - partyStartedAt) / 60000));
+  el.textContent = `⏱ ${mins} min elapsed`;
+}
+
+async function endPartyNow(){
+  const ok = confirm("End the party now and show final standings? Any game currently in progress won't be counted.");
+  if(!ok) return;
+  finished = true;
+  await saveState();
+  finishTournament();
+}
+
 function goHome(){
   if(pollTimer) clearInterval(pollTimer);
+  if(clockTimer) clearInterval(clockTimer);
   document.getElementById('main').classList.add('hidden');
   document.getElementById('done').classList.add('hidden');
   document.getElementById('gamePill').classList.add('hidden');
   document.getElementById('syncBadge').classList.add('hidden');
   document.getElementById('homeBtn').classList.add('hidden');
   document.getElementById('syncNowBtn').classList.add('hidden');
+  document.getElementById('endPartyBtn').classList.add('hidden');
+  document.getElementById('clockBadge').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
   // pre-fill so re-entering the same code just rejoins where things left off
   if(partyCode) document.getElementById('partyCode').value = partyCode;
@@ -697,9 +742,31 @@ function escapeHtml(str){
     .replace(/'/g, '&#39;');
 }
 
-function avatarHtml(id, size){
+let myPlayerId = null; // "this is me" — purely a local highlight, never synced
+
+function loadMyId(){
+  try{
+    const v = localStorage.getItem('pickleMyId:' + partyCode);
+    return v !== null ? parseInt(v, 10) : null;
+  }catch(err){ return null; }
+}
+
+function setAsMe(id){
+  myPlayerId = (myPlayerId === id) ? null : id; // tap again to un-mark
+  try{ localStorage.setItem('pickleMyId:' + partyCode, String(myPlayerId)); }catch(err){}
+  render();
+}
+
+function avatarHtml(id, size, clickable){
   const p = P(id);
-  return `<div class="avatar" style="background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${escapeHtml(initials(p.name))}</div>`;
+  const isMe = id === myPlayerId;
+  const ring = isMe ? 'box-shadow:0 0 0 3px var(--sun), 0 0 10px rgba(255,46,154,0.55);' : '';
+  const clickBits = clickable ? `onclick="setAsMe(${id})" title="Tap to mark this as you" style="cursor:pointer;${ring}` : `style="${ring}`;
+  return `<div class="avatar" ${clickBits}background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${escapeHtml(initials(p.name))}</div>`;
+}
+
+function meTag(id){
+  return id === myPlayerId ? ' <span class="me-tag">📍 you</span>' : '';
 }
 
 function editableName(id, extraClass){
@@ -710,6 +777,7 @@ function render(){
   document.getElementById('gamePill').textContent =
     isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
   document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
+  document.getElementById('undoBtn').style.display = undoSnapshot ? 'inline-flex' : 'none';
 
   const sorted = [...players].sort((a,b)=>b.rating-a.rating);
 
@@ -721,11 +789,11 @@ function render(){
       ? `<span class="delta ${p.lastDelta>=0?'up':'down'}">${p.lastDelta>=0?'+':''}${p.lastDelta}</span>` : '';
     const rankHtml = i<3 ? `<span class="medal">${medalIcons[i]}</span>` : `#${i+1}`;
     return `
-    <div class="board-row ${i<3?'top3':''}">
+    <div class="board-row ${i<3?'top3':''} ${p.id===myPlayerId?'is-me':''}">
       <span class="rank">${rankHtml}</span>
-      ${avatarHtml(p.id,34)}
+      ${avatarHtml(p.id,34,true)}
       <div class="info">
-        <span class="pname">${editableName(p.id)}</span>
+        <span class="pname">${editableName(p.id)}${meTag(p.id)}</span>
         <div class="meta">
           <span class="court-tag ${p.court}">Court ${p.court}</span>
           <span class="wl">${p.wins}-${p.losses}</span>
@@ -755,10 +823,10 @@ function render(){
         <div class="kitchen-line"></div>
         <div class="kitchen-line bottom"></div>
         <div class="teams">
-          <div class="team">
+          <div class="team ${(t1[0]===myPlayerId||t1[1]===myPlayerId)?'is-me':''}">
             <div class="players">
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[0])}</div>
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[0])}${meTag(t1[0])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}${meTag(t1[1])}</div>
             </div>
             <div class="score-stepper">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,-1)">−</button>
@@ -766,10 +834,10 @@ function render(){
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,1)">+</button>
             </div>
           </div>
-          <div class="team">
+          <div class="team ${(t2[0]===myPlayerId||t2[1]===myPlayerId)?'is-me':''}">
             <div class="players">
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[0])}</div>
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[0])}${meTag(t2[0])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}${meTag(t2[1])}</div>
             </div>
             <div class="score-stepper">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,-1)">−</button>
@@ -817,6 +885,8 @@ function startEditName(el, id){
 }
 
 // ---------- SCORING & LADDER MOVEMENT ----------
+let undoSnapshot = null; // lets the last submitted score be reversed if someone mis-tapped
+
 function adjustScore(court, teamIndex, delta){
   const next = Math.max(0, currentScores[court][teamIndex] + delta);
   currentScores[court][teamIndex] = next;
@@ -834,6 +904,11 @@ async function submitRound(){
     alert("Enter a final score for both courts — no ties in pickleball, so the two numbers need to differ!");
     return;
   }
+
+  // Snapshot everything as it was right before this submission, in case it needs undoing.
+  undoSnapshot = JSON.parse(JSON.stringify({
+    players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished
+  }));
 
   applyResult('A', sA1, sA2);
   applyResult('B', sB1, sB2);
@@ -855,6 +930,16 @@ async function submitRound(){
 
   roundNum++;
   generatePairing();
+  render();
+  await saveState();
+}
+
+async function undoLastSubmit(){
+  if(!undoSnapshot) return;
+  const ok = confirm('Undo the last submitted score? This puts the game back to right before that submission.');
+  if(!ok) return;
+  ({ players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished } = undoSnapshot);
+  undoSnapshot = null;
   render();
   await saveState();
 }
@@ -882,9 +967,27 @@ function finishTournament(){
 
 function showDoneScreen(){
   if(pollTimer) clearInterval(pollTimer);
+  if(clockTimer) clearInterval(clockTimer);
   document.getElementById('main').classList.add('hidden');
-  const champ = [...players].sort((a,b)=>b.rating-a.rating)[0];
+  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+  const champ = sorted[0];
   document.getElementById('champName').textContent = '🥒 ' + champ.name;
+
+  const medalIcons = ['🥇','🥈','🥉'];
+  document.getElementById('finalStandings').innerHTML = sorted.map((p,i)=>{
+    const rankHtml = i<3 ? `<span class="medal">${medalIcons[i]}</span>` : `#${i+1}`;
+    return `
+    <div class="board-row ${i<3?'top3':''} ${p.id===myPlayerId?'is-me':''}">
+      <span class="rank">${rankHtml}</span>
+      ${avatarHtml(p.id,34,true)}
+      <div class="info">
+        <span class="pname">${escapeHtml(p.name)}${meTag(p.id)}</span>
+        <div class="meta"><span class="wl">${p.wins}-${p.losses}</span></div>
+      </div>
+      <div class="pts-col"><span class="pts">${Math.round(p.rating)}</span></div>
+    </div>`;
+  }).join('');
+
   const done = document.getElementById('done');
   done.classList.remove('hidden');
   spawnConfetti(done);
