@@ -108,7 +108,7 @@
   .name-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
   .name-tag{
     display:flex;align-items:center;gap:10px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);
-    border-radius:12px;padding:10px 14px;transition:border-color .15s ease;
+    border-radius:12px;padding:10px 14px;transition:border-color .15s ease;position:relative;
   }
   .name-tag:focus-within{border-color:rgba(255,46,154,0.4);}
   .name-tag .avatar{
@@ -120,6 +120,18 @@
     font-family:'Manrope';
   }
   .name-tag input:focus{outline:none;}
+  .suggest-list{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;
+    background:var(--card);border:1px solid rgba(255,46,154,0.3);border-radius:12px;
+    max-height:240px;overflow-y:auto;box-shadow:0 10px 24px rgba(0,0,0,0.45);
+  }
+  .suggest-list.open{display:block;}
+  .suggest-item{
+    padding:12px 16px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;
+    border-top:1px solid rgba(234,246,255,0.07);
+  }
+  .suggest-item:first-child{border-top:none;}
+  .suggest-item:active{background:rgba(255,46,154,0.15);}
   .row-opts{display:flex;gap:14px;align-items:center;margin-bottom:22px;color:var(--ink-dim);font-weight:600;font-size:15px;flex-wrap:wrap;}
   .row-opts input[type=number]{
     width:60px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.14);color:var(--ink);
@@ -538,9 +550,42 @@ for (let i=0;i<8;i++){
   const tag = document.createElement('div');
   tag.className = 'name-tag';
   tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${SLOT_ICONS[i]}</div>
-    <input id="name${i}" placeholder="Player ${i+1}" maxlength="24" list="knownPlayers" autocomplete="off">`;
+    <input id="name${i}" placeholder="Tap to pick or type a name" maxlength="24" autocomplete="off"
+      oninput="renderSuggestions(${i})" onfocus="renderSuggestions(${i})">
+    <div class="suggest-list" id="suggest${i}"></div>`;
   nameGrid.appendChild(tag);
 }
+
+// Custom dropdown — much more reliable on mobile than the native <input list>
+// datalist, which iOS/Android browsers render inconsistently (or not at all).
+function renderSuggestions(i){
+  const input = document.getElementById('name'+i);
+  const list = document.getElementById('suggest'+i);
+  const q = input.value.trim().toLowerCase();
+  const known = getKnownPlayers();
+  const matches = (q ? known.filter(n=>n.toLowerCase().includes(q)) : known).slice(0,8);
+  if(matches.length===0){ list.classList.remove('open'); list.innerHTML=''; return; }
+  list.dataset.slot = i;
+  list.innerHTML = matches.map(n=>`<div class="suggest-item" data-name="${escapeHtmlAttr(n)}">${escapeHtml(n)}</div>`).join('');
+  list.classList.add('open');
+}
+
+nameGrid.addEventListener('click', e=>{
+  const item = e.target.closest('.suggest-item');
+  if(!item) return;
+  const list = item.closest('.suggest-list');
+  const i = list.dataset.slot;
+  document.getElementById('name'+i).value = item.dataset.name;
+  list.classList.remove('open');
+});
+
+document.addEventListener('click', e=>{
+  document.querySelectorAll('.suggest-list.open').forEach(list=>{
+    const wrap = list.closest('.name-tag');
+    if(wrap && !wrap.contains(e.target)) list.classList.remove('open');
+  });
+});
+
 document.getElementById('partyCode').value = randomCode();
 
 function initials(name){
@@ -739,8 +784,12 @@ async function startNewParty(){
     }
     const names = [];
     for(let i=0;i<8;i++){
-      const v = document.getElementById('name'+i).value.trim();
-      names.push(v || ('Player '+(i+1)));
+      names.push(document.getElementById('name'+i).value.trim());
+    }
+    const emptyCount = names.filter(n => !n).length;
+    if(emptyCount > 0){
+      alert(`Fill in all 8 names first — ${emptyCount} field${emptyCount>1?'s are':' is'} still empty.`);
+      return;
     }
     totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
     players = names.map((n,i)=>({
