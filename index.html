@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Pickle Party — Backyard Court Rotation</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -37,6 +37,7 @@
     color:var(--ink);
     font-family:'Manrope',sans-serif;
     min-height:100vh;
+    touch-action:manipulation;
   }
   .wrap{max-width:1080px;margin:0 auto;padding:26px 18px 70px;}
   h1,h2,h3,h4{font-family:'Manrope',sans-serif;font-weight:800;letter-spacing:-0.01em;margin:0;}
@@ -79,7 +80,8 @@
 
   /* ---------- BUTTONS ---------- */
   button{cursor:pointer;font-family:'Manrope',sans-serif;font-weight:700;border:1px solid rgba(234,246,255,0.14);
-    border-radius:12px;transition:transform .15s ease, box-shadow .15s ease, background .15s ease;background:var(--card);color:var(--ink);}
+    border-radius:12px;transition:transform .15s ease, box-shadow .15s ease, background .15s ease;background:var(--card);color:var(--ink);
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
   button:active{transform:translateY(1px);}
   .btn-big{
     background:linear-gradient(135deg, var(--sun), var(--sun-dark));
