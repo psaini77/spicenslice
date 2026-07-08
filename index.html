@@ -203,6 +203,8 @@
   .board-row .rank .medal{font-size:16px;}
   .board-row.is-me{background:rgba(255,46,154,0.06);box-shadow:inset 3px 0 0 var(--sun);}
   .me-tag{font-size:10.5px;font-weight:700;color:var(--sun);white-space:nowrap;}
+  .serve-dot{font-size:11px;display:inline-block;animation:servePulse 1.6s ease-in-out infinite;}
+  @keyframes servePulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.85);}}
   .board-row .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0B0E14;font-size:13px;font-family:'Manrope';font-weight:700;flex:none;}
   .board-row .info{min-width:0;}
   .board-row .info .pname{font-weight:700;font-size:15.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -328,6 +330,10 @@
     box-shadow:0 3px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(57,255,106,0.3);z-index:2;
   }
   .win-btn:active{transform:scale(0.88);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+  .win-btn.dimmed{
+    background:rgba(255,255,255,0.1);border-color:var(--card);color:rgba(255,255,255,0.4);
+    box-shadow:0 2px 5px rgba(0,0,0,0.3);
+  }
 
   .submit-row{display:flex;justify-content:center;margin-bottom:30px;}
   .submit-row button{padding:15px 30px;font-size:16px;}
@@ -411,6 +417,7 @@
     .row-opts{margin-bottom:16px;}
     .btn-big{padding:15px 20px;font-size:16px;}
     button{min-height:44px;}
+    .step-btn, .win-btn{min-height:0;}
     .board-row{grid-template-columns:20px 30px 1fr auto;gap:8px;padding:9px 10px;}
     .board-row .info .pname{font-size:14px;}
     .board-row .pts{font-size:14px;}
@@ -616,6 +623,14 @@
         <div>
           <h4>Game commentary</h4>
           <p>After each game, you'll get a quick reaction line — calling out a blowout, a nail-biter, an upset, or a big final-game finish. It's a scripted picker, not a live AI writing fresh text — no account or cost needed, and it still works offline.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-icon">🟢</div>
+        <div>
+          <h4>Who serves first</h4>
+          <p>Each game, one player on the court gets a little green dot — that's who serves first. It's picked automatically, favoring whoever's served first the least so far, so the honor rotates fairly across everyone over the whole session instead of always falling to the same person.</p>
         </div>
       </div>
 
@@ -888,7 +903,7 @@ async function startNewParty(){
     totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
     players = names.map((n,i)=>({
       id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
-      wins:0, losses:0, games:0, lastDelta:0
+      wins:0, losses:0, games:0, lastDelta:0, serveFirstCount:0
     }));
     generatePairing();
     rememberPlayerNames(names);
@@ -1075,6 +1090,15 @@ function generatePairing(){
     }
     pairing[court] = {t1, t2};
     lastPairKey[court] = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
+
+    // Pick who serves first this game — whoever among these 4 has served
+    // first the least so far, so the honor rotates fairly over the session.
+    // Ties broken randomly rather than always defaulting to the same seat.
+    const minCount = Math.min(...group.map(p=>p.serveFirstCount));
+    const candidates = group.filter(p=>p.serveFirstCount === minCount);
+    const server = candidates[Math.floor(Math.random()*candidates.length)];
+    server.serveFirstCount++;
+    pairing[court].server = server.id;
   });
 }
 
@@ -1120,6 +1144,12 @@ function avatarHtml(id, size, clickable){
 
 function meTag(id){
   return id === myPlayerId ? ' <span class="me-tag">📍 you</span>' : '';
+}
+
+function serveDot(id, court){
+  return (pairing[court] && pairing[court].server === id)
+    ? ' <span class="serve-dot" title="Serves first this game">🟢</span>'
+    : '';
 }
 
 function editableName(id, extraClass){
@@ -1189,10 +1219,10 @@ function render(){
         <div class="kitchen-line bottom"></div>
         <div class="teams">
           <div class="team ${(t1[0]===myPlayerId||t1[1]===myPlayerId)?'is-me':''}">
-            <button type="button" class="win-btn" onclick="setWinner('${court}',0)" title="Set to ${targetScore}">🏆</button>
+            <button type="button" class="win-btn" data-court="${court}" data-team="0" onclick="setWinner('${court}',0)" title="Set to ${targetScore}">🏆</button>
             <div class="players">
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[0])}${meTag(t1[0])}</div>
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}${meTag(t1[1])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[0])}${meTag(t1[0])}${serveDot(t1[0],court)}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}${meTag(t1[1])}${serveDot(t1[1],court)}</div>
             </div>
             <div class="score-stepper">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',0,-1)">−</button>
@@ -1202,10 +1232,10 @@ function render(){
             </div>
           </div>
           <div class="team ${(t2[0]===myPlayerId||t2[1]===myPlayerId)?'is-me':''}">
-            <button type="button" class="win-btn" onclick="setWinner('${court}',1)" title="Set to ${targetScore}">🏆</button>
+            <button type="button" class="win-btn" data-court="${court}" data-team="1" onclick="setWinner('${court}',1)" title="Set to ${targetScore}">🏆</button>
             <div class="players">
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[0])}${meTag(t2[0])}</div>
-              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}${meTag(t2[1])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[0])}${meTag(t2[0])}${serveDot(t2[0],court)}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}${meTag(t2[1])}${serveDot(t2[1],court)}</div>
             </div>
             <div class="score-stepper">
               <button type="button" class="step-btn" onclick="adjustScore('${court}',1,-1)">−</button>
@@ -1297,6 +1327,13 @@ function setWinner(court, teamIndex){
   currentScores[court][teamIndex] = targetScore;
   const el = document.getElementById(`score-${court}-${teamIndex+1}`);
   if(el) el.value = targetScore;
+
+  // Only one team can be "the winner" — tapping one lights it up and dims the other.
+  const otherIndex = teamIndex === 0 ? 1 : 0;
+  const thisBtn = document.querySelector(`.win-btn[data-court="${court}"][data-team="${teamIndex}"]`);
+  const otherBtn = document.querySelector(`.win-btn[data-court="${court}"][data-team="${otherIndex}"]`);
+  if(thisBtn) thisBtn.classList.remove('dimmed');
+  if(otherBtn) otherBtn.classList.add('dimmed');
 }
 
 // ---------- COMMENTARY ENGINE ----------
