@@ -185,6 +185,15 @@
   .final-banner h3{font-size:20px;color:var(--coral);text-shadow:0 0 10px rgba(255,93,58,0.3);}
   .final-banner p{margin:2px 0 0;color:var(--ink-dim);font-weight:500;font-size:13px;}
 
+  /* ---------- COMMENTARY BANNER ---------- */
+  .commentary-banner{
+    background:var(--cream-2);border:1px solid rgba(234,246,255,0.12);border-left:3px solid var(--sun);
+    border-radius:12px;padding:12px 16px;margin-bottom:18px;
+  }
+  .commentary-line{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;}
+  .commentary-line + .commentary-line{margin-top:6px;}
+  .commentary-recap{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--sun);font-style:italic;}
+
   /* ---------- COURTS ---------- */
   .courts-heading{font-size:22px;color:var(--pickle);margin:0 0 12px;display:flex;align-items:center;gap:8px;text-shadow:0 0 12px rgba(57,255,106,0.35);}
   .courts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
@@ -255,7 +264,7 @@
   .t-item::before{content:"";position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--sun);border:2px solid var(--card);box-shadow:0 0 0 1px rgba(255,46,154,0.4);}
   .t-item.final::before{background:var(--coral);box-shadow:0 0 0 1px rgba(255,93,58,0.4);}
   .t-item b{font-family:'Manrope';font-weight:700;font-size:14px;}
-  .t-item .match{color:var(--ink-dim);font-weight:500;}
+  .t-item .match{color:var(--ink-dim);font-weight:500;display:block;margin-top:2px;}
   .t-item .score-chip{font-family:'Space Mono';background:var(--cream-2);border-radius:6px;padding:1px 6px;font-weight:700;color:var(--ink);}
 
   /* ---------- DONE ---------- */
@@ -398,6 +407,8 @@
       </div>
     </div>
 
+    <div id="commentaryBanner" class="commentary-banner hidden"></div>
+
     <h3 class="courts-heading">🎾 On the courts</h3>
     <div class="courts" id="courtsWrap"></div>
 
@@ -477,6 +488,14 @@
         <div>
           <h4>Live sync</h4>
           <p>Every score you submit saves instantly and shows up on everyone else's phone using the same party code, usually within a few seconds. The little badge in the top corner tells you if your device is connected.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-icon">🎙️</div>
+        <div>
+          <h4>Game commentary</h4>
+          <p>After each game, you'll get a quick reaction line — calling out a blowout, a nail-biter, an upset, or a big final-game finish. It's a scripted picker, not a live AI writing fresh text — no account or cost needed, and it still works offline.</p>
         </div>
       </div>
 
@@ -671,12 +690,18 @@ async function pollOnce(){
   if(isTyping) return; // don't yank state out from under someone mid-edit
   const remote = await loadRemoteState();
   if(remote && remote.savedAt && remote.savedAt > lastSavedAt){
+    const prevHistoryLen = history.length;
     applyRemoteState(remote);
     lastSavedAt = remote.savedAt;
     if(finished){
       showDoneScreen();
     } else {
       render();
+      if(history.length > prevHistoryLen){
+        const latest = history[history.length - 1];
+        const lines = [latest.aCommentary, latest.bCommentary].filter(Boolean);
+        if(lines.length) showCommentaryBanner(lines);
+      }
     }
   }
   updateSyncBadge();
@@ -752,6 +777,7 @@ async function enterMainScreen(){
   document.getElementById('syncNowBtn').classList.remove('hidden');
   document.getElementById('endPartyBtn').classList.remove('hidden');
   document.getElementById('clockBadge').classList.remove('hidden');
+  document.getElementById('commentaryBanner').classList.add('hidden');
   startClock();
 
   if(finished){
@@ -979,8 +1005,10 @@ function render(){
     hb.innerHTML = '<div class="timeline">' + history.slice().reverse().map(h=>`
       <div class="t-item ${h.final?'final':''}">
         <b>Game ${h.round}${h.final?' 🏆 Final':''}</b><br>
-        <span class="match">Court A: ${escapeHtml(h.aT1)} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${escapeHtml(h.aT2)}</span><br>
+        <span class="match">Court A: ${escapeHtml(h.aT1)} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${escapeHtml(h.aT2)}</span>
+        ${h.aCommentary ? `<span class="commentary-recap">${escapeHtml(h.aCommentary)}</span>` : ''}
         <span class="match">Court B: ${escapeHtml(h.bT1)} <span class="score-chip">${h.bScore1}–${h.bScore2}</span> ${escapeHtml(h.bT2)}</span>
+        ${h.bCommentary ? `<span class="commentary-recap">${escapeHtml(h.bCommentary)}</span>` : ''}
       </div>`).join('') + '</div>';
   }
 }
@@ -1020,6 +1048,70 @@ function setScore(court, teamIndex, rawValue){
   currentScores[court][teamIndex] = isNaN(n) ? 0 : Math.max(0, n);
 }
 
+// ---------- COMMENTARY ENGINE ----------
+// Rule-based, not a live AI call — no API key, no cost, works offline. It reacts
+// to what actually happened (blowout, nail-biter, upset, final game) and picks
+// from a big pool of lines so it doesn't repeat itself constantly.
+const COMMENTARY = {
+  blowout: [
+    "🔥 {w} steamrolled {l} {s}. Somebody check {l}'s pulse.",
+    "💥 {w} just handed {l} a {s} beatdown. No mercy on this court.",
+    "😳 {s}?! {w} wasn't playing pickleball, they were playing chess.",
+    "🚨 Mercy rule vibes: {w} over {l}, {s}. Next.",
+    "🧹 {w} swept the floor with {l}. {s}, and it wasn't close."
+  ],
+  close: [
+    "😱 {w} survives {l} in a nail-biter, {s}. Someone needed a heart monitor.",
+    "🫣 {w} edges out {l} {s}. That one aged everybody five years.",
+    "🎯 {w} over {l}, {s} — could not have been tighter if they tried.",
+    "😤 {w} outlasts {l} {s} in an absolute dogfight.",
+    "🪢 {w} wins it {s}. That game deserved its own trophy."
+  ],
+  upset: [
+    "👀 UPSET ALERT: {w} just knocked off {l}, {s}. Nobody saw that coming.",
+    "🫢 The underdogs have their day — {w} takes down {l} {s}.",
+    "📉📈 {l} was the favorite. {w} didn't get the memo. Final: {s}.",
+    "🐐 {w} pulls off the upset of the day over {l}, {s}."
+  ],
+  final: [
+    "🏆 THE FINAL. {w} takes the crown over {l}, {s}. Legends only.",
+    "👑 Champion's game: {w} closes it out {s} against {l}.",
+    "🎬 And that's a wrap — {w} wins the finale {s} over {l}."
+  ],
+  general: [
+    "🥒 {w} takes it {s} over {l}. On to the next one.",
+    "✅ {w} gets the win, {s}, over {l}.",
+    "🏓 Clean game — {w} over {l}, {s}.",
+    "📋 {w} adds another one to the tally: {s} over {l}.",
+    "🙌 {w} keeps it rolling with a {s} win over {l}."
+  ]
+};
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function generateCommentary(winnerIds, loserIds, s1, s2, opts){
+  const w = winnerIds.map(nameOf).join(' & ');
+  const l = loserIds.map(nameOf).join(' & ');
+  const s = `${Math.max(s1,s2)}–${Math.min(s1,s2)}`;
+  const margin = Math.abs(s1 - s2);
+
+  let pool;
+  if(opts.isFinalGame) pool = COMMENTARY.final;
+  else if(opts.isUpset) pool = COMMENTARY.upset;
+  else if(margin >= 8) pool = COMMENTARY.blowout;
+  else if(margin <= 2) pool = COMMENTARY.close;
+  else pool = COMMENTARY.general;
+
+  return pick(pool).replace(/{w}/g, w).replace(/{l}/g, l).replace(/{s}/g, s);
+}
+
+function showCommentaryBanner(lines){
+  const el = document.getElementById('commentaryBanner');
+  if(!el) return;
+  el.innerHTML = lines.map(l => `<div class="commentary-line">${escapeHtml(l)}</div>`).join('');
+  el.classList.remove('hidden');
+}
+
 async function submitRound(){
   const sA1 = currentScores.A[0];
   const sA2 = currentScores.A[1];
@@ -1036,15 +1128,32 @@ async function submitRound(){
     players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished
   }));
 
+  // Capture pre-game ratings before applyResult changes them, so "upset" can be judged fairly.
+  const avgRating = ids => ids.reduce((sum,id)=>sum+P(id).rating,0) / ids.length;
+  const aPreT1 = avgRating(pairing.A.t1), aPreT2 = avgRating(pairing.A.t2);
+  const bPreT1 = avgRating(pairing.B.t1), bPreT2 = avgRating(pairing.B.t2);
+
   applyResult('A', sA1, sA2);
   applyResult('B', sB1, sB2);
+
+  const aWinners = sA1>sA2 ? pairing.A.t1 : pairing.A.t2;
+  const aLosers  = sA1>sA2 ? pairing.A.t2 : pairing.A.t1;
+  const aUpset = sA1>sA2 ? (aPreT2 > aPreT1) : (aPreT1 > aPreT2);
+  const aCommentary = generateCommentary(aWinners, aLosers, sA1, sA2, { isFinalGame: isFinal, isUpset: aUpset });
+
+  const bWinners = sB1>sB2 ? pairing.B.t1 : pairing.B.t2;
+  const bLosers  = sB1>sB2 ? pairing.B.t2 : pairing.B.t1;
+  const bUpset = sB1>sB2 ? (bPreT2 > bPreT1) : (bPreT1 > bPreT2);
+  const bCommentary = generateCommentary(bWinners, bLosers, sB1, sB2, { isFinalGame: isFinal, isUpset: bUpset });
+
+  showCommentaryBanner([aCommentary, bCommentary]);
 
   history.push({
     round: roundNum, final:isFinal,
     aT1:nameOf(pairing.A.t1[0])+'/'+nameOf(pairing.A.t1[1]), aT2:nameOf(pairing.A.t2[0])+'/'+nameOf(pairing.A.t2[1]),
-    aScore1:sA1, aScore2:sA2,
+    aScore1:sA1, aScore2:sA2, aCommentary,
     bT1:nameOf(pairing.B.t1[0])+'/'+nameOf(pairing.B.t1[1]), bT2:nameOf(pairing.B.t2[0])+'/'+nameOf(pairing.B.t2[1]),
-    bScore1:sB1, bScore2:sB2
+    bScore1:sB1, bScore2:sB2, bCommentary
   });
 
   if(roundNum >= totalRounds){ finished = true; await saveState(); finishTournament(); return; }
@@ -1066,6 +1175,7 @@ async function undoLastSubmit(){
   if(!ok) return;
   ({ players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished } = undoSnapshot);
   undoSnapshot = null;
+  document.getElementById('commentaryBanner').classList.add('hidden');
   render();
   await saveState();
 }
