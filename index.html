@@ -267,6 +267,46 @@
   @keyframes fall{to{transform:translateY(480px) rotate(360deg);opacity:0.2;}}
 
   .hidden{display:none;}
+
+  /* ---------- HOW THIS WORKS OVERLAY ---------- */
+  .guide-overlay{
+    position:fixed;inset:0;background:rgba(5,6,9,0.72);backdrop-filter:blur(3px);
+    z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .guide-card{
+    background:var(--card);border:1px solid rgba(234,246,255,0.14);border-radius:20px;
+    max-width:560px;width:100%;max-height:88vh;overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(0,229,255,0.08);
+    padding:24px;
+  }
+  .guide-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .guide-head h2{
+    font-size:26px;
+    background:linear-gradient(135deg, var(--sun), var(--pickle));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  .guide-close{
+    width:36px;height:36px;border-radius:50%;font-size:16px;padding:0;flex:none;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .guide-section{display:flex;gap:14px;margin-bottom:20px;align-items:flex-start;}
+  .guide-icon{
+    font-size:24px;flex:none;width:44px;height:44px;border-radius:12px;
+    background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;
+  }
+  .guide-section h4{font-size:16px;margin-bottom:4px;color:var(--ink);}
+  .guide-section p{margin:0;color:var(--ink-dim);font-size:14px;line-height:1.6;}
+  .guide-section p b{color:var(--ink);}
+  .guide-done-btn{width:100%;margin-top:6px;padding:13px;}
+
+  @media(max-width:480px){
+    .guide-card{padding:18px;border-radius:16px;max-height:85vh;}
+    .guide-head h2{font-size:21px;}
+    .guide-section{gap:10px;margin-bottom:16px;}
+    .guide-icon{width:36px;height:36px;font-size:19px;border-radius:10px;}
+    .guide-section h4{font-size:14.5px;}
+    .guide-section p{font-size:13px;}
+  }
   footer.note{text-align:center;color:var(--ink-dim);font-weight:500;font-size:12px;margin-top:22px;}
 
   /* ---------- MOBILE TIGHTENING ---------- */
@@ -312,6 +352,7 @@
       <div class="sub">8 players &middot; 2 courts &middot; nobody sits out</div>
     </div>
     <div class="hero-right">
+      <button class="btn-ghost home-btn" onclick="openGuide()" title="How scoring & pairing works">❓ How this works</button>
       <button id="homeBtn" class="btn-ghost home-btn hidden" onclick="goHome()" title="Back to first page">🏠 Home</button>
       <div id="clockBadge" class="clock-badge hidden"></div>
       <div id="gamePill" class="game-pill hidden"></div>
@@ -385,6 +426,60 @@
   </div>
 
   <footer class="note">Scores sync live to everyone using the same party code, right from this page — no app or account needed.</footer>
+</div>
+
+<!-- HOW THIS WORKS — an overlay, not a page, so nothing typed underneath is ever lost -->
+<div id="guideOverlay" class="guide-overlay hidden" onclick="if(event.target===this) closeGuide()">
+  <div class="guide-card">
+    <div class="guide-head">
+      <h2>📖 How this works</h2>
+      <button class="guide-close" onclick="closeGuide()" title="Close">✕</button>
+    </div>
+    <div class="guide-body">
+
+      <div class="guide-section">
+        <div class="guide-icon">🎯</div>
+        <div>
+          <h4>Party Points</h4>
+          <p>Everyone starts at <b>0</b>. Win a game and you gain points; lose one and you drop a few. The margin matters a little too — a convincing win earns a bit more, and a close loss costs a bit less. It's not trying to be a precise ranking system — just enough to sort out who's playing well today.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-icon">🪜</div>
+        <div>
+          <h4>The ladder: Court A vs Court B</h4>
+          <p><b>Court A</b> is the top court, <b>Court B</b> is the challenger court. After every game, the <b>losing team on Court A drops down</b> to Court B, and the <b>winning team on Court B moves up</b> to Court A. Everyone else stays put. Play well and you climb toward Court A; a rough game and you slide back — so matches stay close and nobody's stuck in a blowout all night.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-icon">🤝</div>
+        <div>
+          <h4>How teams get paired</h4>
+          <p>Within each court, the 4 players are ranked by their current points. The <b>strongest and weakest</b> team up against the <b>two in the middle</b> — that keeps teams roughly balanced instead of stacking all the best players together. If that exact pairing just happened, it's automatically reshuffled so you're not stuck with the identical matchup twice in a row.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-icon">🏆</div>
+        <div>
+          <h4>The final game</h4>
+          <p>For the very last game, the ladder logic is set aside for one moment: the <b>top 4 players by points</b> are placed on Court A together, no matter which court they were on or who they've already played. Best plays best, one time, to settle it.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-icon">🔄</div>
+        <div>
+          <h4>Live sync</h4>
+          <p>Every score you submit saves instantly and shows up on everyone else's phone using the same party code, usually within a few seconds. The little badge in the top corner tells you if your device is connected.</p>
+        </div>
+      </div>
+
+    </div>
+    <button class="btn-ghost guide-done-btn" onclick="closeGuide()">Got it — back to the game</button>
+  </div>
 </div>
 
 <script>
@@ -686,6 +781,20 @@ async function endPartyNow(){
   await saveState();
   finishTournament();
 }
+
+// ---------- HOW THIS WORKS OVERLAY ----------
+// Just toggles visibility of a layer sitting on top of everything else — it
+// never re-renders or touches players/scores/pairing, so whatever's typed
+// into the score boxes underneath is exactly as you left it when you close this.
+function openGuide(){
+  document.getElementById('guideOverlay').classList.remove('hidden');
+}
+function closeGuide(){
+  document.getElementById('guideOverlay').classList.add('hidden');
+}
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape') closeGuide();
+});
 
 function goHome(){
   if(pollTimer) clearInterval(pollTimer);
