@@ -113,7 +113,7 @@
   .name-tag:focus-within{border-color:rgba(255,46,154,0.4);}
   .name-tag .avatar{
     width:32px;height:32px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
-    font-family:'Manrope';font-weight:700;font-size:13px;color:#0B0E14;
+    font-family:'Manrope';font-weight:700;font-size:16px;color:#0B0E14;
   }
   .name-tag input{
     border:none;background:transparent;font-size:17px;font-weight:600;color:var(--ink);width:100%;
@@ -532,11 +532,12 @@ function randomCode(){
 }
 
 // ---------- SETUP ----------
+const SLOT_ICONS = ['🥒','🏓','😎','🔥','⚡','🌟','🦄','🍕']; // fun stand-ins until a name is typed
 const nameGrid = document.getElementById('nameGrid');
 for (let i=0;i<8;i++){
   const tag = document.createElement('div');
   tag.className = 'name-tag';
-  tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${i+1}</div>
+  tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${SLOT_ICONS[i]}</div>
     <input id="name${i}" placeholder="Player ${i+1}" maxlength="24" list="knownPlayers" autocomplete="off">`;
   nameGrid.appendChild(tag);
 }
@@ -548,28 +549,35 @@ function initials(name){
 }
 
 // ---------- REMEMBERED PLAYER NAMES ----------
-// Just a plain dropdown of names typed in before on this device/browser, so
-// a regular group doesn't have to retype the same 8 names every time. Stored
-// locally — nothing shared or synced, and totally optional to use.
+// A dropdown of names to pick from instead of retyping — starts with the
+// regular group's roster below, and grows with anyone new who's added at
+// setup. Extra names are stored locally per device.
+const DEFAULT_PLAYERS = [
+  'Aarti','Deepa','Gopi','Kala','Khushboo','Latika','Nancy','Nidhi',
+  'Payal','Puja','Rupa','Sangita','Sonal B','Sonal M','Suruchi','Tripti'
+];
 const KNOWN_PLAYERS_KEY = 'picklePartyKnownPlayers';
 
 function getKnownPlayers(){
+  let extra = [];
   try{
-    return JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
+    extra = JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
   }catch(err){
-    return [];
+    extra = [];
   }
+  const merged = [...new Set([...DEFAULT_PLAYERS, ...extra])];
+  return merged.sort((a,b)=>a.localeCompare(b));
 }
 
 function rememberPlayerNames(names){
   try{
-    const known = getKnownPlayers();
+    const stored = JSON.parse(localStorage.getItem(KNOWN_PLAYERS_KEY) || '[]');
     names.forEach(n=>{
       const trimmed = n.trim();
-      if(trimmed && !known.includes(trimmed)) known.push(trimmed);
+      if(trimmed && !DEFAULT_PLAYERS.includes(trimmed) && !stored.includes(trimmed)) stored.push(trimmed);
     });
-    // keep the most recent 40 so the list doesn't grow forever
-    localStorage.setItem(KNOWN_PLAYERS_KEY, JSON.stringify(known.slice(-40)));
+    // keep the most recent 40 extras so the list doesn't grow forever
+    localStorage.setItem(KNOWN_PLAYERS_KEY, JSON.stringify(stored.slice(-40)));
   }catch(err){
     // localStorage can fail (private browsing, storage full, etc.) — fine to just skip remembering
   }
