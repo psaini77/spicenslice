@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pickle Party — Backyard Court Rotation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#0B0E14;
+    --cream-2:#141925;
+    --card:#12161F;
+    --ink:#EAF6FF;
+    --ink-dim:#7C8CA0;
+    --pickle:#39FF6A;
+    --pickle-dark:#17D34A;
+    --sun:#FF2E9A;
+    --sun-dark:#D6127A;
+    --court-blue:#00E5FF;
+    --court-blue-dark:#00AECC;
+    --court-green:#B026FF;
+    --coral:#FF5D3A;
+    --coral-dark:#E63A1B;
+    --grape:#B026FF;
+    --line:#EAF6FF;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 18px rgba(0,229,255,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(255,46,154,0.12) 0%, transparent 38%),
+      radial-gradient(circle at 95% 10%, rgba(0,229,255,0.11) 0%, transparent 42%),
+      radial-gradient(circle at 50% 100%, rgba(57,255,106,0.06) 0%, transparent 50%),
+      var(--cream);
+    color:var(--ink);
+    font-family:'Manrope',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 18px 70px;}
+  h1,h2,h3,h4{font-family:'Manrope',sans-serif;font-weight:800;letter-spacing:-0.01em;margin:0;}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important;} }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .home-btn{padding:8px 14px;font-size:13px;white-space:nowrap;}
+  .sync-now-btn{padding:8px 11px;font-size:14px;line-height:1;}
+  .hero .mascot{
+    font-size:40px;display:inline-block;animation:float 3s ease-in-out infinite;
+  }
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+  .hero h1{
+    font-family:'Baloo 2',sans-serif;font-weight:700;
+    font-size:38px;color:var(--pickle);line-height:1;display:flex;align-items:center;gap:10px;
+    text-shadow:0 0 16px rgba(57,255,106,0.4);
+  }
+  .hero .sub{color:var(--ink-dim);font-weight:600;font-size:13px;margin-top:5px;letter-spacing:0.02em;}
+  .game-pill{
+    background:var(--card);color:var(--sun);font-family:'Manrope';font-size:14px;font-weight:700;
+    padding:8px 18px;border-radius:999px;box-shadow:0 0 0 1px rgba(255,46,154,0.35), 0 0 16px rgba(255,46,154,0.2);white-space:nowrap;
+    border:1px solid rgba(255,46,154,0.35);
+  }
+  .sync-badge{
+    font-size:12px;font-weight:700;color:var(--ink-dim);display:flex;align-items:center;gap:6px;
+  }
+  .sync-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-dim);}
+  .sync-badge.live .dot{background:var(--pickle);box-shadow:0 0 6px rgba(57,255,106,0.8);animation:pulse 1.6s ease-in-out infinite;}
+  .sync-badge.offline .dot{background:var(--coral);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+  /* ---------- BUTTONS ---------- */
+  button{cursor:pointer;font-family:'Manrope',sans-serif;font-weight:700;border:1px solid rgba(234,246,255,0.14);
+    border-radius:12px;transition:transform .15s ease, box-shadow .15s ease, background .15s ease;background:var(--card);color:var(--ink);}
+  button:active{transform:translateY(1px);}
+  .btn-big{
+    background:linear-gradient(135deg, var(--sun), var(--sun-dark));
+    box-shadow:0 0 0 1px rgba(255,46,154,0.3), 0 4px 22px rgba(255,46,154,0.32);padding:15px 26px;font-size:16px;width:100%;color:#0B0E14;
+  }
+  .btn-big:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(255,46,154,0.4), 0 6px 28px rgba(255,46,154,0.42);}
+  .btn-ghost{background:var(--card);box-shadow:0 0 0 1px rgba(0,229,255,0.18);padding:9px 18px;font-size:14px;color:var(--ink-dim);}
+  .btn-ghost:hover{background:var(--cream-2);color:var(--ink);}
+
+  /* ---------- SETUP ---------- */
+  .setup-card{
+    background:var(--card);border:1px solid rgba(234,246,255,0.12);border-radius:20px;padding:28px;max-width:660px;margin:20px auto;
+    box-shadow:0 1px 2px rgba(0,0,0,0.4), 0 0 30px rgba(0,229,255,0.08);
+  }
+  .setup-card h2{font-size:28px;color:var(--sun);margin-bottom:4px;text-shadow:0 0 14px rgba(255,46,154,0.35);}
+  .sync-check-banner{
+    font-size:12.5px;font-weight:600;border-radius:10px;padding:9px 12px;margin:10px 0 4px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sync-check-banner.checking{background:rgba(234,246,255,0.06);color:var(--ink-dim);}
+  .sync-check-banner.ok{background:rgba(57,255,106,0.08);color:var(--pickle);}
+  .sync-check-banner.fail{background:rgba(255,93,58,0.1);color:var(--coral);}
+  .setup-card p.hint{color:var(--ink-dim);font-weight:500;font-size:14px;margin:8px 0 20px;line-height:1.6;}
+  .name-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .name-tag{
+    display:flex;align-items:center;gap:9px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);
+    border-radius:12px;padding:7px 12px;transition:border-color .15s ease;
+  }
+  .name-tag:focus-within{border-color:rgba(255,46,154,0.4);}
+  .name-tag .avatar{
+    width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    font-family:'Manrope';font-weight:700;font-size:12px;color:#0B0E14;
+  }
+  .name-tag input{
+    border:none;background:transparent;font-size:15px;font-weight:600;color:var(--ink);width:100%;
+    font-family:'Manrope';
+  }
+  .name-tag input:focus{outline:none;}
+  .row-opts{display:flex;gap:14px;align-items:center;margin-bottom:22px;color:var(--ink-dim);font-weight:600;font-size:14px;flex-wrap:wrap;}
+  .row-opts input[type=number]{
+    width:52px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.14);color:var(--ink);
+    padding:5px 8px;border-radius:8px;font-family:'Space Mono';font-weight:700;text-align:center;
+  }
+
+  /* ---------- SCOREBOARD ---------- */
+  .scoreboard{margin-bottom:22px;}
+  .scoreboard > h3{
+    font-size:20px;color:var(--pickle);margin-bottom:4px;display:flex;align-items:center;gap:8px;
+    text-shadow:0 0 12px rgba(57,255,106,0.35);
+  }
+  .scoreboard .hint-row{color:var(--ink-dim);font-weight:500;font-size:12px;margin-bottom:12px;}
+
+  .board-list{background:var(--card);border:1px solid rgba(234,246,255,0.1);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.3);}
+  .board-row{
+    display:grid;grid-template-columns:26px 34px 1fr auto;align-items:center;gap:10px;
+    padding:10px 12px;border-top:1px solid rgba(234,246,255,0.07);
+  }
+  .board-row:first-child{border-top:none;}
+  .board-row.top3{background:rgba(255,46,154,0.05);}
+  .board-row .rank{color:var(--ink-dim);font-family:'Space Mono';font-weight:700;font-size:13px;text-align:center;}
+  .board-row .rank .medal{font-size:16px;}
+  .board-row .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0B0E14;font-size:13px;font-family:'Manrope';font-weight:700;flex:none;}
+  .board-row .info{min-width:0;}
+  .board-row .info .pname{font-weight:700;font-size:14.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .board-row .info .meta{display:flex;align-items:center;gap:6px;margin-top:2px;}
+  .board-row .info .meta .wl{color:var(--ink-dim);font-size:11.5px;font-weight:600;font-family:'Space Mono';}
+  .board-row .court-tag{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:700;}
+  .court-tag.A{background:rgba(0,229,255,0.12);color:var(--court-blue);}
+  .court-tag.B{background:rgba(176,38,255,0.14);color:var(--grape);}
+  .board-row .pts-col{text-align:right;}
+  .board-row .pts{font-family:'Space Mono';color:var(--ink);font-weight:700;font-size:15px;}
+  .board-row .delta{font-family:'Space Mono';font-size:11px;display:block;}
+  .board-row .delta.up{color:var(--pickle);} .board-row .delta.down{color:var(--coral);}
+
+  .editable-name{cursor:pointer;border-bottom:2px dotted transparent;}
+  .editable-name:hover{border-bottom-color:var(--coral);}
+  .editable-name .pencil{font-size:11px;opacity:0;margin-left:4px;transition:opacity .15s ease;color:var(--coral-dark);}
+  .editable-name:hover .pencil{opacity:1;}
+  .name-edit-input{
+    background:var(--cream-2);border:1px solid var(--coral);color:var(--ink);
+    border-radius:6px;padding:2px 6px;font-size:inherit;font-family:inherit;font-weight:700;width:100px;
+  }
+  .name-edit-input:focus{outline:none;}
+
+  /* ---------- FINAL BANNER ---------- */
+  .final-banner{
+    background:linear-gradient(135deg, rgba(255,93,58,0.5), rgba(255,46,154,0.5));
+    border:1px solid rgba(234,246,255,0.12);border-radius:16px;padding:1px;margin-bottom:22px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 0 20px rgba(255,46,154,0.1);
+  }
+  .final-banner-inner{
+    background:var(--card);border-radius:15px;padding:14px 18px;display:flex;align-items:center;gap:14px;
+  }
+  .final-banner .trophy{font-size:30px;}
+  .final-banner h3{font-size:20px;color:var(--coral);text-shadow:0 0 10px rgba(255,93,58,0.3);}
+  .final-banner p{margin:2px 0 0;color:var(--ink-dim);font-weight:500;font-size:13px;}
+
+  /* ---------- COURTS ---------- */
+  .courts-heading{font-size:22px;color:var(--pickle);margin:0 0 12px;display:flex;align-items:center;gap:8px;text-shadow:0 0 12px rgba(57,255,106,0.35);}
+  .courts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+  @media(max-width:720px){.courts{grid-template-columns:1fr;}}
+  .court-card{
+    background:var(--card);border:1px solid rgba(234,246,255,0.1);border-radius:18px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,0.35); position:relative;transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .court-card:hover{transform:translateY(-2px);}
+  .court-card.champ{box-shadow:0 1px 2px rgba(0,0,0,0.35), 0 0 20px rgba(255,46,154,0.14);}
+  .court-head{
+    display:flex;justify-content:space-between;align-items:center;padding:12px 16px;
+    color:var(--ink-dim);
+  }
+  .champ .court-head{color:var(--sun);}
+  .court-head h4{font-size:17px;display:flex;align-items:center;gap:6px;color:var(--ink);font-weight:700;}
+  .court-head .badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:0.7;}
+
+  .court-surface{
+    background:linear-gradient(160deg, rgba(0,229,255,0.85), rgba(0,174,204,0.85));
+    margin:0 14px 14px;border-radius:12px;padding:18px 14px;position:relative;
+    border:1px solid rgba(255,255,255,0.25);
+  }
+  .champ .court-surface{background:linear-gradient(160deg, rgba(176,38,255,0.85), rgba(140,20,210,0.85));}
+  .court-surface::before{ /* net */
+    content:"";position:absolute;left:50%;top:12px;bottom:12px;width:2px;
+    background:repeating-linear-gradient(180deg, rgba(255,255,255,0.6) 0 6px, transparent 6px 12px);
+    transform:translateX(-50%);
+  }
+  .kitchen-line{position:absolute;left:14px;right:14px;top:38%;height:1px;background:rgba(255,255,255,0.3);}
+  .kitchen-line.bottom{top:62%;}
+
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1;}
+  .team{
+    background:rgba(11,14,20,0.75);backdrop-filter:blur(2px);border-radius:12px;padding:10px;text-align:center;
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .team .players{font-family:'Manrope';font-weight:700;font-size:14px;line-height:1.6;color:var(--ink);}
+  .team .players .pl{display:flex;align-items:center;justify-content:center;gap:5px;}
+  .team .paddle{font-size:13px;}
+  .score-row{display:flex;justify-content:center;gap:8px;margin-top:10px;}
+  .score-row input{
+    width:52px;text-align:center;font-family:'Space Mono',monospace;font-size:18px;font-weight:700;
+    background:rgba(11,14,20,0.55);border:1px solid rgba(255,255,255,0.25);color:var(--ink);border-radius:8px;padding:6px 0;
+  }
+  .score-row input:focus{outline:none;box-shadow:0 0 0 2px rgba(255,46,154,0.5);}
+
+  .submit-row{display:flex;justify-content:center;margin-bottom:30px;}
+  .submit-row button{padding:15px 30px;font-size:16px;}
+
+  /* ---------- RECAP TIMELINE ---------- */
+  .recap{background:var(--card);border:1px solid rgba(234,246,255,0.1);border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.3);}
+  .recap h3{font-size:20px;color:var(--pickle);margin-bottom:12px;text-shadow:0 0 10px rgba(57,255,106,0.3);}
+  .timeline{position:relative;padding-left:20px;}
+  .timeline::before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:1px;background:rgba(234,246,255,0.14);}
+  .t-item{position:relative;margin-bottom:14px;font-size:13px;}
+  .t-item::before{content:"";position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--sun);border:2px solid var(--card);box-shadow:0 0 0 1px rgba(255,46,154,0.4);}
+  .t-item.final::before{background:var(--coral);box-shadow:0 0 0 1px rgba(255,93,58,0.4);}
+  .t-item b{font-family:'Manrope';font-weight:700;font-size:14px;}
+  .t-item .match{color:var(--ink-dim);font-weight:500;}
+  .t-item .score-chip{font-family:'Space Mono';background:var(--cream-2);border-radius:6px;padding:1px 6px;font-weight:700;color:var(--ink);}
+
+  /* ---------- DONE ---------- */
+  .done-card{text-align:center;padding:44px 20px;position:relative;overflow:hidden;}
+  .done-card h2{font-size:34px;color:var(--coral);text-shadow:0 0 14px rgba(255,93,58,0.4);}
+  .done-card .champ-name{
+    font-family:'Baloo 2';font-weight:700;font-size:52px;margin:14px 0;color:var(--pickle);
+    text-shadow:0 0 20px rgba(57,255,106,0.45);
+  }
+  .confetti{position:absolute;top:-20px;width:8px;height:14px;opacity:0.85;animation:fall linear forwards;border-radius:2px;}
+  @keyframes fall{to{transform:translateY(480px) rotate(360deg);opacity:0.2;}}
+
+  .hidden{display:none;}
+  footer.note{text-align:center;color:var(--ink-dim);font-weight:500;font-size:12px;margin-top:22px;}
+
+  /* ---------- MOBILE TIGHTENING ---------- */
+  @media(max-width:480px){
+    .wrap{padding:14px 10px 60px;}
+    .hero{margin-bottom:16px;}
+    .hero h1{font-size:26px;}
+    .hero .mascot{font-size:28px;}
+    .hero .sub{font-size:11px;}
+    .name-grid{grid-template-columns:1fr;gap:8px;}
+    .setup-card{padding:18px;border-radius:16px;}
+    .setup-card h2{font-size:24px;}
+    .row-opts{margin-bottom:16px;}
+    .btn-big{padding:15px 20px;font-size:16px;}
+    button{min-height:44px;}
+    .board-row{grid-template-columns:20px 30px 1fr auto;gap:8px;padding:9px 10px;}
+    .board-row .info .pname{font-size:14px;}
+    .board-row .pts{font-size:14px;}
+    .courts-heading, .scoreboard > h3, .recap h3{font-size:18px;}
+    .courts{gap:12px;margin-bottom:18px;}
+    .court-surface{margin:0 10px 10px;padding:12px 10px;}
+    .team{padding:8px;}
+    .team .players{font-size:13px;}
+    .score-row input{width:100%;max-width:64px;height:46px;font-size:18px;}
+    .submit-row button{width:100%;}
+    .final-banner-inner{padding:12px 14px;gap:10px;}
+    .final-banner .trophy{font-size:24px;}
+    .final-banner h3{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1><span class="mascot">🥒</span> Pickle Party</h1>
+      <div class="sub">8 players &middot; 2 courts &middot; nobody sits out</div>
+    </div>
+    <div class="hero-right">
+      <button id="homeBtn" class="btn-ghost home-btn hidden" onclick="goHome()" title="Back to first page">🏠 Home</button>
+      <div id="gamePill" class="game-pill hidden"></div>
+      <div id="syncBadge" class="sync-badge hidden"></div>
+      <button id="syncNowBtn" class="btn-ghost sync-now-btn hidden" onclick="manualSync()" title="Pull the latest scores now">🔄</button>
+    </div>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="setup" class="setup-card">
+    <h2>Who's playing today?</h2>
+    <div id="syncCheckBanner" class="sync-check-banner"></div>
+    <p class="hint">Type in all 8 names to get the party started. Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
+    <div class="name-grid" id="nameGrid"></div>
+    <div class="row-opts">
+      <label>Number of games:</label>
+      <input type="number" id="totalRounds" value="8" min="3" max="20">
+    </div>
+    <div class="row-opts" style="margin-bottom:10px;">
+      <label>Party code:</label>
+      <input type="text" id="partyCode" maxlength="6" autocapitalize="characters" autocomplete="off" style="width:90px;text-transform:uppercase;letter-spacing:0.08em;">
+    </div>
+    <p class="hint" style="margin:0 0 18px;font-size:13px;">Everyone uses the <b>same code</b>. Whoever adds the players taps <b>Start new party</b>; everyone else taps <b>Join existing party</b> with that same code to see live updates.</p>
+    <button class="btn-big" onclick="startNewParty()">🏓 Start new party</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="joinExistingParty()">🔗 Join existing party</button>
+  </div>
+
+  <!-- MAIN VIEW -->
+  <div id="main" class="hidden">
+
+    <div id="finalBanner" class="final-banner hidden">
+      <div class="final-banner-inner">
+        <div class="trophy">🏆</div>
+        <div>
+          <h3>The Big Finale!</h3>
+          <p>Court A now has the top 4 party-point earners — best plays best, no matter who they've already faced.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="scoreboard">
+      <h3>🏆 Scoreboard</h3>
+      <div class="hint-row">✎ tap any name to fix a typo — here or right on the courts below</div>
+      <div class="board-list" id="boardList"></div>
+    </div>
+
+    <h3 class="courts-heading">🎾 On the courts</h3>
+    <div class="courts" id="courtsWrap"></div>
+
+    <div class="submit-row">
+      <button class="btn-big" id="submitBtn" onclick="submitRound()">✅ Submit scores &amp; shuffle courts</button>
+    </div>
+
+    <div class="recap">
+      <h3>📋 Party recap</h3>
+      <div id="historyBody"><span style="color:var(--ink-dim);font-weight:700;font-size:13px;">No games yet — get out there!</span></div>
+    </div>
+  </div>
+
+  <!-- DONE SCREEN -->
+  <div id="done" class="setup-card done-card hidden">
+    <h2>🎉 That's a wrap!</h2>
+    <div class="champ-name" id="champName"></div>
+    <p style="color:var(--ink-dim);font-weight:700;">Full standings are on the scoreboard from the last game — go grab that trophy (or the bragging rights).</p>
+    <button class="btn-ghost" onclick="location.reload()">Start a new party</button>
+  </div>
+
+  <footer class="note">Scores sync live to everyone using the same party code, right from this page — no app or account needed.</footer>
+</div>
+
+<script>
+const AVATAR_COLORS = ['#39FF6A','#00E5FF','#FF2E9A','#B026FF','#FF5D3A','#2BFFD5','#FF073A','#4C6EDB'];
+
+let players = [];      // {id,name,rating,court,wins,losses,games,lastDelta}
+let roundNum = 1;
+let totalRounds = 8;
+let pairing = null;
+let lastPairKey = {A:null,B:null};
+let history = [];
+let isFinal = false;
+let finished = false;
+
+let partyCode = null;
+let storageOk = null;      // null = unknown, true/false once tested
+let lastSavedAt = 0;
+let pollTimer = null;
+
+function randomCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for(let i=0;i<4;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+// ---------- SETUP ----------
+const nameGrid = document.getElementById('nameGrid');
+for (let i=0;i<8;i++){
+  const tag = document.createElement('div');
+  tag.className = 'name-tag';
+  tag.innerHTML = `<div class="avatar" style="background:${AVATAR_COLORS[i]}">${i+1}</div>
+    <input id="name${i}" placeholder="Player ${i+1}">`;
+  nameGrid.appendChild(tag);
+}
+document.getElementById('partyCode').value = randomCode();
+
+function initials(name){
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || name.slice(0,2).toUpperCase();
+}
+
+// ---------- SHARED STORAGE (Netlify Function + Blobs) ----------
+const API_BASE = '/.netlify/functions/party';
+
+function snapshotState(){
+  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, savedAt: Date.now() };
+}
+
+// Runs once on page load, independent of any party code, so we know right away
+// (before anyone types a single name) whether live sync actually works — instead
+// of silently discovering it later.
+async function testStorageConnection(){
+  const banner = document.getElementById('syncCheckBanner');
+  banner.className = 'sync-check-banner checking';
+  banner.textContent = '🔄 Checking live sync for this device…';
+
+  try{
+    const testCode = 'TEST' + Math.random().toString(36).slice(2,6).toUpperCase();
+    const postRes = await fetch(`${API_BASE}?code=${testCode}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ping:true})
+    });
+    if(!postRes.ok) throw new Error('POST failed: ' + postRes.status);
+    const getRes = await fetch(`${API_BASE}?code=${testCode}`);
+    if(!getRes.ok) throw new Error('GET failed: ' + getRes.status);
+    const data = await getRes.json();
+    storageOk = !!(data && data.ping === true);
+  }catch(err){
+    storageOk = false;
+    console.error('Storage self-test failed:', err);
+  }
+
+  if(storageOk){
+    banner.className = 'sync-check-banner ok';
+    banner.textContent = '✅ Live sync works here — scores will share with anyone using the same code.';
+  } else {
+    banner.className = 'sync-check-banner fail';
+    banner.textContent = "⚠️ Live sync isn't reachable right now. You can still play, but updates won't reach other devices until this is fixed — check that the site is deployed on Netlify with the party function enabled.";
+  }
+}
+testStorageConnection();
+
+async function saveState(){
+  if(!partyCode) return;
+  try{
+    const res = await fetch(`${API_BASE}?code=${partyCode}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(snapshotState())
+    });
+    storageOk = res.ok;
+    if(res.ok) lastSavedAt = Date.now();
+  }catch(err){
+    storageOk = false;
+    console.error('Save failed:', err);
+  }
+  updateSyncBadge();
+}
+
+// A missing code just means "no party with this code yet" — that's not the same
+// thing as sync being broken, so this never flips storageOk on its own.
+async function loadRemoteState(){
+  if(!partyCode) return null;
+  try{
+    const res = await fetch(`${API_BASE}?code=${partyCode}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data || null;
+  }catch(err){
+    return null;
+  }
+}
+
+function applyRemoteState(s){
+  players = s.players; roundNum = s.roundNum; totalRounds = s.totalRounds;
+  pairing = s.pairing; lastPairKey = s.lastPairKey; history = s.history; isFinal = s.isFinal;
+  finished = !!s.finished;
+}
+
+function updateSyncBadge(){
+  const el = document.getElementById('syncBadge');
+  el.classList.remove('hidden');
+  if(storageOk === true){
+    el.className = 'sync-badge live';
+    el.innerHTML = `<span class="dot"></span> Live &middot; code ${partyCode}`;
+  } else if(storageOk === false){
+    el.className = 'sync-badge offline';
+    el.innerHTML = `<span class="dot"></span> Not synced — check the site's live sync function`;
+  } else {
+    el.className = 'sync-badge';
+    el.innerHTML = `<span class="dot"></span> Connecting…`;
+  }
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollOnce, 4000);
+}
+
+async function pollOnce(){
+  const active = document.activeElement;
+  const isTyping = active && (active.tagName==='INPUT');
+  if(isTyping) return; // don't yank state out from under someone mid-edit
+  const remote = await loadRemoteState();
+  if(remote && remote.savedAt && remote.savedAt > lastSavedAt){
+    applyRemoteState(remote);
+    lastSavedAt = remote.savedAt;
+    if(finished){
+      showDoneScreen();
+    } else {
+      render();
+    }
+  }
+  updateSyncBadge();
+}
+
+async function manualSync(){
+  const btn = document.getElementById('syncNowBtn');
+  btn.textContent = '⏳';
+  await pollOnce();
+  btn.textContent = '🔄';
+}
+
+async function startNewParty(){
+  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase() || randomCode();
+  partyCode = codeInput;
+
+  const existing = await loadRemoteState();
+  if(existing){
+    const takeOver = confirm(`A party already exists with code ${partyCode}. Tap OK to join it instead (your entered names will be ignored), or Cancel to pick a different code.`);
+    if(!takeOver) return;
+    applyRemoteState(existing);
+    lastSavedAt = existing.savedAt || Date.now();
+  } else {
+    if(storageOk === false){
+      const proceed = confirm("⚠️ Live sync isn't reachable from this device right now, so this party will stay local-only (other phones won't see updates). Start anyway?");
+      if(!proceed) return;
+    }
+    const names = [];
+    for(let i=0;i<8;i++){
+      const v = document.getElementById('name'+i).value.trim();
+      names.push(v || ('Player '+(i+1)));
+    }
+    totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
+    players = names.map((n,i)=>({
+      id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
+      wins:0, losses:0, games:0, lastDelta:0
+    }));
+    generatePairing();
+  }
+
+  await enterMainScreen();
+}
+
+async function joinExistingParty(){
+  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase();
+  if(!codeInput){ alert('Type the party code the other player is using first.'); return; }
+  partyCode = codeInput;
+
+  const existing = await loadRemoteState();
+  if(existing){
+    applyRemoteState(existing);
+    lastSavedAt = existing.savedAt || Date.now();
+    await enterMainScreen();
+    return;
+  }
+
+  if(storageOk === false){
+    alert("Couldn't reach live sync right now. Make sure everyone is using the same live website URL (not a downloaded copy of the file), and that the site's sync function is deployed correctly.");
+  } else {
+    alert(`No party found yet with code ${partyCode}. Double-check the code with the other player, or use "Start new party" instead.`);
+  }
+}
+
+async function enterMainScreen(){
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('main').classList.remove('hidden');
+  document.getElementById('gamePill').classList.remove('hidden');
+  document.getElementById('homeBtn').classList.remove('hidden');
+  document.getElementById('syncNowBtn').classList.remove('hidden');
+
+  if(finished){
+    render();
+    showDoneScreen();
+  } else {
+    render();
+  }
+  await saveState();
+  startPolling();
+}
+
+function goHome(){
+  if(pollTimer) clearInterval(pollTimer);
+  document.getElementById('main').classList.add('hidden');
+  document.getElementById('done').classList.add('hidden');
+  document.getElementById('gamePill').classList.add('hidden');
+  document.getElementById('syncBadge').classList.add('hidden');
+  document.getElementById('homeBtn').classList.add('hidden');
+  document.getElementById('syncNowBtn').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+  // pre-fill so re-entering the same code just rejoins where things left off
+  if(partyCode) document.getElementById('partyCode').value = partyCode;
+  players.forEach((p,i)=>{ const inp = document.getElementById('name'+i); if(inp) inp.value = p.name; });
+  if(totalRounds) document.getElementById('totalRounds').value = totalRounds;
+}
+
+// ---------- PAIRING LOGIC ----------
+function generatePairing(){
+  isFinal = (roundNum === totalRounds);
+
+  if(isFinal){
+    const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+    const topFour = sorted.slice(0,4).map(p=>p.id);
+    players.forEach(p=>{ p.court = topFour.includes(p.id) ? 'A' : 'B'; });
+  }
+
+  pairing = {};
+  ['A','B'].forEach(court=>{
+    const group = players.filter(p=>p.court===court).sort((a,b)=>b.rating-a.rating);
+    const key = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
+    let t1, t2;
+    if(key === lastPairKey[court]){
+      t1 = [group[0].id, group[2].id];
+      t2 = [group[1].id, group[3].id];
+    } else {
+      t1 = [group[0].id, group[3].id];
+      t2 = [group[1].id, group[2].id];
+    }
+    pairing[court] = {t1, t2};
+    lastPairKey[court] = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
+  });
+}
+
+// ---------- RENDER ----------
+function P(id){ return players.find(p=>p.id===id); }
+function nameOf(id){ return P(id).name; }
+
+function avatarHtml(id, size){
+  const p = P(id);
+  return `<div class="avatar" style="background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${initials(p.name)}</div>`;
+}
+
+function editableName(id, extraClass){
+  return `<span class="editable-name ${extraClass||''}" onclick="startEditName(this,${id})">${nameOf(id)}<i class="pencil">✎</i></span>`;
+}
+
+function render(){
+  document.getElementById('gamePill').textContent =
+    isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
+  document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
+
+  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+
+  // podium (top 3)
+  const medalIcons = ['🥇','🥈','🥉'];
+  const board = document.getElementById('boardList');
+  board.innerHTML = sorted.map((p,i)=>{
+    const deltaHtml = p.games>0
+      ? `<span class="delta ${p.lastDelta>=0?'up':'down'}">${p.lastDelta>=0?'+':''}${p.lastDelta}</span>` : '';
+    const rankHtml = i<3 ? `<span class="medal">${medalIcons[i]}</span>` : `#${i+1}`;
+    return `
+    <div class="board-row ${i<3?'top3':''}">
+      <span class="rank">${rankHtml}</span>
+      ${avatarHtml(p.id,34)}
+      <div class="info">
+        <span class="pname">${editableName(p.id)}</span>
+        <div class="meta">
+          <span class="court-tag ${p.court}">Court ${p.court}</span>
+          <span class="wl">${p.wins}-${p.losses}</span>
+        </div>
+      </div>
+      <div class="pts-col">
+        <span class="pts">${Math.round(p.rating)}</span>
+        ${deltaHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  // courts
+  const wrap = document.getElementById('courtsWrap');
+  wrap.innerHTML = '';
+  ['A','B'].forEach(court=>{
+    const {t1,t2} = pairing[court];
+    const card = document.createElement('div');
+    card.className = 'court-card' + (isFinal && court==='A' ? ' champ' : '');
+    card.innerHTML = `
+      <div class="court-head">
+        <h4>🎾 Court ${court}</h4>
+        <span class="badge">${isFinal && court==='A' ? 'Championship' : (court==='A' ? 'Top court' : 'Challenger court')}</span>
+      </div>
+      <div class="court-surface">
+        <div class="kitchen-line"></div>
+        <div class="kitchen-line bottom"></div>
+        <div class="teams">
+          <div class="team">
+            <div class="players">
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[0])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t1[1])}</div>
+            </div>
+          </div>
+          <div class="team">
+            <div class="players">
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[0])}</div>
+              <div class="pl"><span class="paddle">🏓</span>${editableName(t2[1])}</div>
+            </div>
+          </div>
+        </div>
+        <div class="score-row">
+          <input type="number" min="0" id="score-${court}-1" placeholder="0">
+          <span style="align-self:center;color:#fff;font-weight:700;">–</span>
+          <input type="number" min="0" id="score-${court}-2" placeholder="0">
+        </div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+
+  // recap timeline
+  const hb = document.getElementById('historyBody');
+  if(history.length===0){
+    hb.innerHTML = '<span style="color:var(--ink-dim);font-weight:700;font-size:13px;">No games yet — get out there!</span>';
+  } else {
+    hb.innerHTML = '<div class="timeline">' + history.slice().reverse().map(h=>`
+      <div class="t-item ${h.final?'final':''}">
+        <b>Game ${h.round}${h.final?' 🏆 Final':''}</b><br>
+        <span class="match">Court A: ${h.aT1} <span class="score-chip">${h.aScore1}–${h.aScore2}</span> ${h.aT2}</span><br>
+        <span class="match">Court B: ${h.bT1} <span class="score-chip">${h.bScore1}–${h.bScore2}</span> ${h.bT2}</span>
+      </div>`).join('') + '</div>';
+  }
+}
+
+// ---------- EDIT NAME ----------
+function startEditName(el, id){
+  if(el.querySelector('input')) return;
+  const p = P(id);
+  const current = p.name;
+  el.innerHTML = `<input type="text" class="name-edit-input" value="${current.replace(/"/g,'&quot;')}">`;
+  const input = el.querySelector('input');
+  input.focus(); input.select();
+  const commit = ()=>{
+    const val = input.value.trim();
+    if(val && val !== p.name){ p.name = val; render(); saveState(); }
+    else { render(); }
+  };
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter') input.blur();
+    if(e.key==='Escape'){ render(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+// ---------- SCORING & LADDER MOVEMENT ----------
+async function submitRound(){
+  const sA1 = parseInt(document.getElementById('score-A-1').value);
+  const sA2 = parseInt(document.getElementById('score-A-2').value);
+  const sB1 = parseInt(document.getElementById('score-B-1').value);
+  const sB2 = parseInt(document.getElementById('score-B-2').value);
+
+  if([sA1,sA2,sB1,sB2].some(v=>isNaN(v)) || sA1===sA2 || sB1===sB2){
+    alert("Enter a final score for both courts — no ties in pickleball, so the two numbers need to differ!");
+    return;
+  }
+
+  applyResult('A', sA1, sA2);
+  applyResult('B', sB1, sB2);
+
+  history.push({
+    round: roundNum, final:isFinal,
+    aT1:nameOf(pairing.A.t1[0])+'/'+nameOf(pairing.A.t1[1]), aT2:nameOf(pairing.A.t2[0])+'/'+nameOf(pairing.A.t2[1]),
+    aScore1:sA1, aScore2:sA2,
+    bT1:nameOf(pairing.B.t1[0])+'/'+nameOf(pairing.B.t1[1]), bT2:nameOf(pairing.B.t2[0])+'/'+nameOf(pairing.B.t2[1]),
+    bScore1:sB1, bScore2:sB2
+  });
+
+  if(roundNum >= totalRounds){ finished = true; await saveState(); finishTournament(); return; }
+
+  if(!isFinal){
+    moveLadder(sA1>sA2 ? pairing.A.t2 : pairing.A.t1,
+               sB1>sB2 ? pairing.B.t1 : pairing.B.t2);
+  }
+
+  roundNum++;
+  generatePairing();
+  render();
+  await saveState();
+}
+
+function applyResult(court, s1, s2){
+  const {t1, t2} = pairing[court];
+  const winners = s1>s2 ? t1 : t2;
+  const losers  = s1>s2 ? t2 : t1;
+  const margin = Math.abs(s1-s2);
+  const winDelta = Math.round(10 + Math.min(margin,10)*0.6);
+  const loseDelta = -Math.round(8 + Math.min(margin,10)*0.3);
+  winners.forEach(id=>{ const p=P(id); p.rating+=winDelta; p.wins++; p.games++; p.lastDelta=winDelta; });
+  losers.forEach(id=>{ const p=P(id); p.rating+=loseDelta; p.losses++; p.games++; p.lastDelta=loseDelta; });
+}
+
+function moveLadder(demoteFromA, promoteFromB){
+  demoteFromA.forEach(id=>{ P(id).court = 'B'; });
+  promoteFromB.forEach(id=>{ P(id).court = 'A'; });
+}
+
+function finishTournament(){
+  finished = true;
+  showDoneScreen();
+}
+
+function showDoneScreen(){
+  if(pollTimer) clearInterval(pollTimer);
+  document.getElementById('main').classList.add('hidden');
+  const champ = [...players].sort((a,b)=>b.rating-a.rating)[0];
+  document.getElementById('champName').textContent = '🥒 ' + champ.name;
+  const done = document.getElementById('done');
+  done.classList.remove('hidden');
+  spawnConfetti(done);
+}
+
+function spawnConfetti(container){
+  const colors = AVATAR_COLORS;
+  for(let i=0;i<40;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100+'%';
+    c.style.background = colors[i%colors.length];
+    c.style.animationDuration = (2+Math.random()*1.5)+'s';
+    c.style.animationDelay = (Math.random()*0.6)+'s';
+    container.appendChild(c);
+    setTimeout(()=>c.remove(), 4000);
+  }
+}
+</script>
+</body>
+</html>
