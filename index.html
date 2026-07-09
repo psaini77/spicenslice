@@ -640,7 +640,7 @@
         <div class="trophy">🏆</div>
         <div>
           <h3>The Big Finale!</h3>
-          <p>Court A now has today's top 4 — best plays best, no matter who they've already faced.</p>
+          <p>Sunshine Court hosts one last fun game today — however things have gone, let's finish strong together!</p>
         </div>
       </div>
     </div>
@@ -701,8 +701,8 @@
       <div class="guide-section">
         <div class="guide-icon">🪜</div>
         <div>
-          <h4>The ladder: Court A vs Court B</h4>
-          <p><b>Court A</b> is the top court, <b>Court B</b> is the challenger court. After every game, the <b>losing team on Court A drops down</b> to Court B, and the <b>winning team on Court B moves up</b> to Court A. Everyone else stays put. The whole point is that nobody's stuck in a blowout, and nobody's stuck in a hopeless mismatch — the courts quietly recalibrate so every game stays genuinely competitive for everyone on it.</p>
+          <h4>Sunshine Court &amp; Breeze Court</h4>
+          <p>Games rotate between the two courts based on results — a winning pair swaps over, everyone else keeps playing together. It's not about one court being "better" — it's just how the app keeps every game close, instead of the same foursome getting stuck in a lopsided match all day.</p>
         </div>
       </div>
 
@@ -710,7 +710,7 @@
         <div class="guide-icon">🤝</div>
         <div>
           <h4>How teams get paired</h4>
-          <p>Within each court, the 4 players are ranked internally (never shown to anyone). The <b>strongest and weakest</b> team up against the <b>two in the middle</b> — that keeps teams roughly even instead of stacking all the best players together. If that exact pairing just happened, it's automatically reshuffled so you're not stuck with the identical matchup twice in a row. All of this runs quietly in the background specifically so every game feels like a real, close contest — not to rank anyone.</p>
+          <p>Behind the scenes, the app keeps a quiet internal number for each player — never shown to anyone — just to help split each foursome into two roughly even teams instead of stacking all the strongest players together. If the same pairing just happened, it's automatically reshuffled so you're not stuck with an identical matchup twice in a row. The whole point is that every game feels like a real, fun contest — not to rank anyone.</p>
         </div>
       </div>
 
@@ -718,7 +718,7 @@
         <div class="guide-icon">🏆</div>
         <div>
           <h4>The final game</h4>
-          <p>For the very last game, the ladder logic is set aside for one moment: today's top 4 are placed on Court A together, no matter which court they were on or who they've already played. Best plays best, one time, to settle it.</p>
+          <p>For the very last game of the day, everyone gathers for one fun finish on Sunshine Court together — a nice way to close things out, whatever kind of day it's been.</p>
         </div>
       </div>
 
@@ -1489,22 +1489,25 @@ function render(){
   currentScores = { A:[0,0], B:[0,0] }; // reset each render/round — a fresh round means fresh scores
   const wrap = document.getElementById('courtsWrap');
   wrap.innerHTML = '';
+  const COURT_NAMES = { A: '☀️ Sunshine Court', B: '🌊 Breeze Court' };
   ['A','B'].forEach(court=>{
     const {t1,t2} = pairing[court];
     const card = document.createElement('div');
     card.className = 'court-card' + (isFinal && court==='A' ? ' champ' : '');
     let whyText;
     if(isFinal && court==='A'){
-      whyText = '👑 Top 4 by points, gathered here for one last game — no matter who they already played.';
+      whyText = '🎉 Last game of the day — this group plays it out together, however the day\'s gone so far.';
+    } else if(isFinal){
+      whyText = '🎉 Last game of the day — enjoy it out here, no matter how things went today!';
     } else if(court==='A'){
-      whyText = '⬆️ Win as a pair and you stay here. Lose, and that pair drops to Court B next round.';
+      whyText = '🔄 Win as a pair and this foursome plays together again next round. Lose, and you\'ll swap over to Breeze Court.';
     } else {
-      whyText = '⬇️ Win as a pair here and you move up to Court A next round. Lose, and you stay and reshuffle.';
+      whyText = '🔄 Win as a pair and you\'ll swap over to Sunshine Court next round. Lose, and this foursome plays together again.';
     }
     card.innerHTML = `
       <div class="court-head">
-        <h4>🎾 Court ${court}</h4>
-        <span class="badge">${isFinal && court==='A' ? 'Championship' : (court==='A' ? 'Top court' : 'Challenger court')}</span>
+        <h4>${COURT_NAMES[court]}</h4>
+        <span class="badge">${isFinal && court==='A' ? '🏆 Championship' : ''}</span>
       </div>
       <div class="court-num-row">
         <span class="court-num-tag" onclick="startEditCourtNum(this,'${court}')">${courtNumbers[court] ? `📍 Court #${escapeHtml(courtNumbers[court])}` : '📍 tap to set the physical court #'}<i class="pencil">✎</i></span>
@@ -1647,41 +1650,37 @@ function setWinner(court, teamIndex){
 }
 
 // ---------- COMMENTARY ENGINE ----------
-// Rule-based, not a live AI call — no API key, no cost, works offline. It reacts
-// to what actually happened (blowout, nail-biter, upset, final game) and picks
-// from a big pool of lines so it doesn't repeat itself constantly.
+// Rule-based, not a live AI call — no API key, no cost, works offline. It
+// reacts to the shape of the game (close, decisive, final) but always keeps
+// both teams in a good light — nobody gets mocked for losing, nobody's win
+// gets framed as a "surprise." It's meant to feel like a fun sideline
+// commentator, not a scoreboard judging anyone.
 const COMMENTARY = {
-  blowout: [
-    "🔥 {w} steamrolled {l} {s}. Somebody check {l}'s pulse.",
-    "💥 {w} just handed {l} a {s} beatdown. No mercy on this court.",
-    "😳 {s}?! {w} wasn't playing pickleball, they were playing chess.",
-    "🚨 Mercy rule vibes: {w} over {l}, {s}. Next.",
-    "🧹 {w} swept the floor with {l}. {s}, and it wasn't close."
+  decisive: [
+    "🔥 {w} was really clicking out there today! {s} over {l}.",
+    "💥 Great shot-making from {w} — {s}. Nice hustle, {l}!",
+    "🙌 {w} found their groove, {s} over {l}. On to the next one!",
+    "⭐ Fun one to watch — {w} takes it {s} over {l}.",
+    "🚀 {w} rolling today, {s}. Good game, {l}!"
   ],
   close: [
-    "😱 {w} survives {l} in a nail-biter, {s}. Someone needed a heart monitor.",
-    "🫣 {w} edges out {l} {s}. That one aged everybody five years.",
-    "🎯 {w} over {l}, {s} — could not have been tighter if they tried.",
-    "😤 {w} outlasts {l} {s} in an absolute dogfight.",
-    "🪢 {w} wins it {s}. That game deserved its own trophy."
-  ],
-  upset: [
-    "👀 UPSET ALERT: {w} just knocked off {l}, {s}. Nobody saw that coming.",
-    "🫢 The underdogs have their day — {w} takes down {l} {s}.",
-    "📉📈 {l} was the favorite. {w} didn't get the memo. Final: {s}.",
-    "🐐 {w} pulls off the upset of the day over {l}, {s}."
+    "😅 Nail-biter! {w} edges out {l}, {s} — what a rally-fest.",
+    "🎉 So close! {w} takes it {s}. Both teams brought it today.",
+    "👏 Down to the wire — {w} squeaks by {l}, {s}.",
+    "🥳 Everyone was on the edge of their seat for that one! {w} wins it {s}.",
+    "🔥 {w} and {l} just gave the whole group a show, {s}."
   ],
   final: [
-    "🏆 THE FINAL. {w} takes the crown over {l}, {s}. Legends only.",
-    "👑 Champion's game: {w} closes it out {s} against {l}.",
-    "🎬 And that's a wrap — {w} wins the finale {s} over {l}."
+    "🏆 The finale! {w} closes it out {s} over {l}. What a way to wrap the day!",
+    "🎬 Last game of the day — {w} takes it {s}. Great games, everyone!",
+    "🎊 {w} finishes strong, {s} over {l}. Thanks for playing, all!"
   ],
   general: [
-    "🥒 {w} takes it {s} over {l}. On to the next one.",
-    "✅ {w} gets the win, {s}, over {l}.",
+    "🥒 {w} takes it {s}. Good game, {l}!",
     "🏓 Clean game — {w} over {l}, {s}.",
-    "📋 {w} adds another one to the tally: {s} over {l}.",
-    "🙌 {w} keeps it rolling with a {s} win over {l}."
+    "✅ {w} gets the win, {s}. Both played well.",
+    "🙌 Fun game between {w} and {l}, {s}.",
+    "📋 {w} wins {s}. Nice hustle out there, everyone."
   ]
 };
 
@@ -1695,9 +1694,8 @@ function generateCommentary(winnerIds, loserIds, s1, s2, opts){
 
   let pool;
   if(opts.isFinalGame) pool = COMMENTARY.final;
-  else if(opts.isUpset) pool = COMMENTARY.upset;
-  else if(margin >= 8) pool = COMMENTARY.blowout;
   else if(margin <= 2) pool = COMMENTARY.close;
+  else if(margin >= 8) pool = COMMENTARY.decisive;
   else pool = COMMENTARY.general;
 
   return pick(pool).replace(/{w}/g, w).replace(/{l}/g, l).replace(/{s}/g, s);
@@ -1739,23 +1737,16 @@ async function submitRound(){
     players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished
   }));
 
-  // Capture pre-game ratings before applyResult changes them, so "upset" can be judged fairly.
-  const avgRating = ids => ids.reduce((sum,id)=>sum+P(id).rating,0) / ids.length;
-  const aPreT1 = avgRating(pairing.A.t1), aPreT2 = avgRating(pairing.A.t2);
-  const bPreT1 = avgRating(pairing.B.t1), bPreT2 = avgRating(pairing.B.t2);
-
   applyResult('A', sA1, sA2);
   applyResult('B', sB1, sB2);
 
   const aWinners = sA1>sA2 ? pairing.A.t1 : pairing.A.t2;
   const aLosers  = sA1>sA2 ? pairing.A.t2 : pairing.A.t1;
-  const aUpset = sA1>sA2 ? (aPreT2 > aPreT1) : (aPreT1 > aPreT2);
-  const aCommentary = generateCommentary(aWinners, aLosers, sA1, sA2, { isFinalGame: isFinal, isUpset: aUpset });
+  const aCommentary = generateCommentary(aWinners, aLosers, sA1, sA2, { isFinalGame: isFinal });
 
   const bWinners = sB1>sB2 ? pairing.B.t1 : pairing.B.t2;
   const bLosers  = sB1>sB2 ? pairing.B.t2 : pairing.B.t1;
-  const bUpset = sB1>sB2 ? (bPreT2 > bPreT1) : (bPreT1 > bPreT2);
-  const bCommentary = generateCommentary(bWinners, bLosers, sB1, sB2, { isFinalGame: isFinal, isUpset: bUpset });
+  const bCommentary = generateCommentary(bWinners, bLosers, sB1, sB2, { isFinalGame: isFinal });
 
   showCommentaryBanner([aCommentary, bCommentary]);
 
