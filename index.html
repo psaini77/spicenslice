@@ -269,26 +269,27 @@
 
   .board-list{background:var(--card);border:1px solid rgba(234,246,255,0.1);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.3);}
   .board-row{
-    display:flex;flex-direction:column;gap:8px;
-    padding:12px;border-top:1px solid rgba(234,246,255,0.07);
+    display:flex;align-items:center;gap:9px;
+    padding:9px 12px;border-top:1px solid rgba(234,246,255,0.07);
   }
   .board-row:first-child{border-top:none;}
   .board-row.is-me{background:rgba(255,46,154,0.06);box-shadow:inset 3px 0 0 var(--sun);}
-  .board-row-main{display:flex;align-items:center;gap:10px;}
-  .me-tag{font-size:10.5px;font-weight:700;color:var(--sun);white-space:nowrap;}
+  .me-tag{font-size:10px;font-weight:700;color:var(--sun);white-space:nowrap;}
   .serve-dot{font-size:11px;display:inline-block;animation:servePulse 1.6s ease-in-out infinite;}
   @keyframes servePulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.85);}}
-  .board-row .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0B0E14;font-size:13px;font-family:'Manrope';font-weight:700;flex:none;}
-  .board-row .info{min-width:0;flex:1;}
-  .board-row .info .pname{font-weight:700;font-size:15.5px;}
-  .board-row .info .meta{display:flex;align-items:center;gap:6px;margin-top:2px;}
-  .board-row .court-tag{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:700;}
-  .court-tag.A{background:rgba(0,229,255,0.12);color:var(--court-blue);}
-  .court-tag.B{background:rgba(176,38,255,0.14);color:var(--grape);}
+  .board-row .avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0B0E14;font-size:12px;font-family:'Manrope';font-weight:700;flex:none;}
+  .board-row .info{min-width:0;flex:1;display:flex;align-items:center;gap:6px;overflow:hidden;}
+  .board-row .info .pname{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .board-row .court-badge{
+    flex:none;width:19px;height:19px;border-radius:50%;font-size:10px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .court-badge.A{background:rgba(0,229,255,0.16);color:var(--court-blue);}
+  .court-badge.B{background:rgba(176,38,255,0.18);color:var(--grape);}
   .board-row .motivation-tag{
-    align-self:flex-start;margin-left:44px;font-size:12px;font-weight:800;color:var(--pickle);
+    flex:none;font-size:11px;font-weight:800;color:var(--pickle);white-space:nowrap;
     background:rgba(57,255,106,0.1);border:1px solid rgba(57,255,106,0.3);
-    padding:4px 11px;border-radius:999px;
+    padding:4px 9px;border-radius:999px;
   }
 
   .editable-name{cursor:pointer;border-bottom:2px dotted transparent;}
@@ -501,9 +502,10 @@
     .btn-big{padding:15px 20px;font-size:16px;}
     button{min-height:44px;}
     .step-btn, .win-btn{min-height:0;}
-    .board-row{gap:6px;padding:10px;}
-    .board-row .info .pname{font-size:14px;}
-    .board-row .motivation-tag{margin-left:40px;font-size:11px;padding:3px 9px;}
+    .board-row{gap:7px;padding:8px 10px;}
+    .board-row .avatar{width:26px;height:26px;font-size:11px;}
+    .board-row .info .pname{font-size:13px;}
+    .board-row .motivation-tag{font-size:10px;padding:3px 7px;}
     .courts-heading, .scoreboard > h3, .recap h3{font-size:18px;}
     .courts{gap:12px;margin-bottom:18px;}
     .court-surface{margin:0 8px 8px;padding:10px 6px;}
@@ -1396,9 +1398,9 @@ function avatarHtml(id, size, clickable){
 // It reacts to a player's own most recent result, not to how they stack up
 // against anyone else, so there's no "top" or "bottom" implied by it.
 const MOTIVATION_WORDS = {
-  none: ['Ready to dink! 🥒','Let\'s rally! 🎾','Kitchen bound! 🍳','Warming up! 🔥'],
-  won:  ['Lob Queen! 👑','Dink Master! 🥒','Net Ninja! 🥷','Baseline Boss! 💪','Rally Royalty! 👑','Smash Queen! 💥','Third Shot Star! ⭐','Kitchen Commander! 🍳'],
-  lost: ['Comeback Queen! 🔄','Paddle Warrior! ⚔️','Rising Baller! 📈','Grit Queen! 💪','Next Point Champion! 🎯','Still Dangerous! 🔥']
+  none: ['Ready 🥒','Let\'s rally 🎾','Kitchen bound 🍳','Warming up 🔥'],
+  won:  ['Lob Queen 👑','Dink Master 🥒','Net Ninja 🥷','Baseline Boss 💪','Smash Queen 💥','Rally Star ⭐','Kitchen King 🍳'],
+  lost: ['Comeback Queen 🔄','Paddle Warrior ⚔️','Rising Baller 📈','Grit Queen 💪','Still Dangerous 🔥']
 };
 function motivationTag(p){
   const pool = p.games === 0 ? MOTIVATION_WORDS.none : (p.lastDelta >= 0 ? MOTIVATION_WORDS.won : MOTIVATION_WORDS.lost);
@@ -1434,14 +1436,10 @@ function render(){
     const tag = motivationTag(p);
     return `
     <div class="board-row ${p.id===myPlayerId?'is-me':''}">
-      <div class="board-row-main">
-        ${avatarHtml(p.id,34,true)}
-        <div class="info">
-          <span class="pname">${editableName(p.id)}${meTag(p.id)}</span>
-          <div class="meta">
-            <span class="court-tag ${p.court}">Court ${p.court}</span>
-          </div>
-        </div>
+      ${avatarHtml(p.id,30,true)}
+      <div class="info">
+        <span class="pname">${editableName(p.id)}${meTag(p.id)}</span>
+        <span class="court-badge ${p.court}">${p.court}</span>
       </div>
       <span class="motivation-tag">${escapeHtml(tag)}</span>
     </div>`;
@@ -1808,11 +1806,9 @@ function showDoneScreen(){
     const isStandout = p.id === standout.id;
     return `
     <div class="board-row ${p.id===myPlayerId?'is-me':''} ${isStandout?'standout':''}">
-      <div class="board-row-main">
-        ${avatarHtml(p.id,34,true)}
-        <div class="info">
-          <span class="pname">${escapeHtml(p.name)}${isStandout?' <span class="standout-badge">🌟</span>':''}${meTag(p.id)}</span>
-        </div>
+      ${avatarHtml(p.id,30,true)}
+      <div class="info">
+        <span class="pname">${escapeHtml(p.name)}${isStandout?' <span class="standout-badge">🌟</span>':''}${meTag(p.id)}</span>
       </div>
       <span class="motivation-tag">${escapeHtml(tag)}</span>
     </div>`;
