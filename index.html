@@ -1341,6 +1341,13 @@ function generatePairing(){
     if(key === lastPairKey[court]){
       t1 = [group[0].id, group[2].id];
       t2 = [group[1].id, group[3].id];
+    } else if(Math.random() < 0.3){
+      // Most rounds balance strongest+weakest vs the middle two — but every
+      // so often, let the top two in this foursome play together instead.
+      // With a group this close in skill, this just adds natural variety
+      // without meaningfully hurting how competitive games feel overall.
+      t1 = [group[0].id, group[1].id];
+      t2 = [group[2].id, group[3].id];
     } else {
       t1 = [group[0].id, group[3].id];
       t2 = [group[1].id, group[2].id];
@@ -1811,23 +1818,65 @@ function finishTournament(){
   showDoneScreen();
 }
 
-const STANDOUT_PHRASES = [
-  n => `🌟 Standout of the day: ${n}!`,
-  n => `🔥 ${n} brought the heat today!`,
-  n => `🏓 ${n} was on absolute fire!`,
-  n => `⚡ All eyes on ${n} today!`,
-  n => `🚀 ${n} had the game of the day!`
-];
+// Picks who gets the "spotlight" moment at the end — deliberately NOT just
+// "whoever has the highest internal rating" every time. It gathers a few
+// different genuine storylines (closest game, final-game finish, most wins,
+// plus a pure wildcard with no performance tie at all) and picks one at
+// random, so the spotlight moves around and isn't a predictable crown for
+// the same one or two people every session.
+function pickStandout(playerList, historyList){
+  const candidates = [];
+  const findByName = (n) => playerList.find(p => p.name === n);
+
+  // Highest internal rating — still a valid, occasional pick, just not the only one.
+  const topRated = [...playerList].sort((a,b)=>b.rating-a.rating)[0];
+  candidates.push({ player: topRated, phrase: n => `🌟 Standout of the day: ${n}!` });
+
+  // Whoever won the single closest game of the day, on either court.
+  let closestMargin = Infinity, closestWinnerName = null;
+  historyList.forEach(h=>{
+    const aMargin = Math.abs(h.aScore1 - h.aScore2);
+    if(aMargin < closestMargin){ closestMargin = aMargin; closestWinnerName = (h.aScore1>h.aScore2 ? h.aT1 : h.aT2).split('/')[0]; }
+    if(h.bT1){
+      const bMargin = Math.abs(h.bScore1 - h.bScore2);
+      if(bMargin < closestMargin){ closestMargin = bMargin; closestWinnerName = (h.bScore1>h.bScore2 ? h.bT1 : h.bT2).split('/')[0]; }
+    }
+  });
+  if(closestWinnerName && findByName(closestWinnerName)){
+    candidates.push({ player: findByName(closestWinnerName), phrase: n => `🔥 ${n} played in the closest game of the day!` });
+  }
+
+  // Whoever closed out the final game.
+  const finalEntry = historyList.find(h=>h.final);
+  if(finalEntry){
+    const finalWinnerName = (finalEntry.aScore1>finalEntry.aScore2 ? finalEntry.aT1 : finalEntry.aT2).split('/')[0];
+    if(findByName(finalWinnerName)){
+      candidates.push({ player: findByName(finalWinnerName), phrase: n => `🏆 ${n} closed out the last game of the day!` });
+    }
+  }
+
+  // Most wins overall — a different measure than the internal rating, so it
+  // doesn't always point at the same person.
+  const mostWins = [...playerList].sort((a,b)=>b.wins-a.wins)[0];
+  candidates.push({ player: mostWins, phrase: n => `🎉 ${n} racked up the most wins today!` });
+
+  // A genuine wildcard — completely unrelated to performance, just a fun
+  // shoutout, so the spotlight can land on anyone at all.
+  const wildcard = playerList[Math.floor(Math.random()*playerList.length)];
+  candidates.push({ player: wildcard, phrase: n => `✨ Shoutout to ${n} for a fun day out there!` });
+
+  return candidates[Math.floor(Math.random()*candidates.length)];
+}
 
 function showDoneScreen(){
   if(pollTimer) clearInterval(pollTimer);
   if(clockTimer) clearInterval(clockTimer);
   document.getElementById('main').classList.add('hidden');
 
-  // One standout gets a fun callout — everyone else stays on equal footing,
-  // same styling, same treatment, no ranking among the rest.
-  const standout = [...players].sort((a,b)=>b.rating-a.rating)[0];
-  const phrase = STANDOUT_PHRASES[Math.floor(Math.random()*STANDOUT_PHRASES.length)];
+  // One standout gets a fun callout, chosen from several different genuine
+  // storylines (not just "highest internal number") — everyone else stays
+  // on equal footing, same styling, same treatment.
+  const { player: standout, phrase } = pickStandout(players, history);
   document.getElementById('champName').innerHTML =
     `<span class="standout-line">${escapeHtml(phrase(standout.name))}</span>`;
 
@@ -1870,7 +1919,7 @@ function spawnConfetti(container){
 // works fully offline. Produces a PNG ready to drop into a group chat.
 function generateRecapCanvas(){
   const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
-  const standout = [...players].sort((a,b)=>b.rating-a.rating)[0];
+  const { player: standout, phrase } = pickStandout(players, history);
   const tagMap = assignMotivationTags(players);
   const width = 720;
   const rowH = 68;
@@ -1903,8 +1952,8 @@ function generateRecapCanvas(){
   ctx.fillText(dateLabel, width/2, 84);
 
   ctx.fillStyle = '#FF2E9A';
-  ctx.font = `800 22px ${FONT}`;
-  ctx.fillText(`🌟 Standout of the day: ${standout.name}!`, width/2, 128);
+  ctx.font = `800 19px ${FONT}`;
+  ctx.fillText(phrase(standout.name), width/2, 128);
 
   // divider
   ctx.strokeStyle = 'rgba(255,255,255,0.12)';
