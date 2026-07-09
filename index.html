@@ -169,6 +169,23 @@
     box-shadow:0 0 0 1px rgba(57,255,106,0.25);
   }
   .guest-toggle-btn{width:100%;padding:11px;font-size:13px;margin-bottom:6px;}
+
+  .lineup-preview{margin:16px 0;padding:14px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);border-radius:14px;}
+  .lineup-preview h4{font-size:16px;color:var(--sun);margin-bottom:4px;}
+  .lineup-court{margin-bottom:12px;}
+  .lineup-court:last-child{margin-bottom:0;}
+  .lineup-court-label{font-size:11px;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .lineup-teams{display:flex;align-items:center;gap:8px;}
+  .lineup-team{
+    flex:1;background:var(--card);border:1.5px solid rgba(234,246,255,0.12);border-radius:10px;
+    padding:8px 6px;display:flex;flex-direction:column;gap:4px;
+  }
+  .lineup-vs{font-family:'Baloo 2',sans-serif;color:var(--ink-dim);font-size:13px;flex:none;}
+  .lineup-name{
+    padding:7px 4px;border-radius:7px;font-size:13px;font-weight:700;text-align:center;color:var(--ink);
+    background:rgba(255,255,255,0.03);-webkit-tap-highlight-color:transparent;
+  }
+  .lineup-name.picked{background:rgba(255,46,154,0.25);box-shadow:0 0 0 1.5px var(--sun);color:#fff;}
   .sync-check-banner{
     font-size:12.5px;font-weight:600;border-radius:10px;padding:9px 12px;margin:10px 0 4px;
     display:flex;align-items:center;gap:8px;
@@ -224,13 +241,10 @@
 
   .board-list{background:var(--card);border:1px solid rgba(234,246,255,0.1);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.3);}
   .board-row{
-    display:grid;grid-template-columns:26px 34px 1fr auto;align-items:center;gap:10px;
+    display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;
     padding:10px 12px;border-top:1px solid rgba(234,246,255,0.07);
   }
   .board-row:first-child{border-top:none;}
-  .board-row.top3{background:rgba(255,46,154,0.05);}
-  .board-row .rank{color:var(--ink-dim);font-family:'Space Mono';font-weight:700;font-size:13px;text-align:center;}
-  .board-row .rank .medal{font-size:16px;}
   .board-row.is-me{background:rgba(255,46,154,0.06);box-shadow:inset 3px 0 0 var(--sun);}
   .me-tag{font-size:10.5px;font-weight:700;color:var(--sun);white-space:nowrap;}
   .serve-dot{font-size:11px;display:inline-block;animation:servePulse 1.6s ease-in-out infinite;}
@@ -239,14 +253,12 @@
   .board-row .info{min-width:0;}
   .board-row .info .pname{font-weight:700;font-size:15.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .board-row .info .meta{display:flex;align-items:center;gap:6px;margin-top:2px;}
-  .board-row .info .meta .wl{color:var(--ink-dim);font-size:12.5px;font-weight:600;font-family:'Space Mono';}
   .board-row .court-tag{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:700;}
   .court-tag.A{background:rgba(0,229,255,0.12);color:var(--court-blue);}
   .court-tag.B{background:rgba(176,38,255,0.14);color:var(--grape);}
-  .board-row .pts-col{text-align:right;}
-  .board-row .pts{font-family:'Space Mono';color:var(--ink);font-weight:700;font-size:16.5px;}
-  .board-row .delta{font-family:'Space Mono';font-size:11px;display:block;}
-  .board-row .delta.up{color:var(--pickle);} .board-row .delta.down{color:var(--coral);}
+  .board-row .motivation-tag{
+    font-size:12.5px;font-weight:800;color:var(--pickle);white-space:nowrap;text-align:right;
+  }
 
   .editable-name{cursor:pointer;border-bottom:2px dotted transparent;}
   .editable-name:hover{border-bottom-color:var(--coral);}
@@ -537,6 +549,13 @@
         <input id="guestNameInput" placeholder="Type a guest's name, then tap Add" maxlength="24" autocomplete="off">
         <button type="button" class="btn-ghost" style="padding:8px 12px;font-size:13px;" onclick="addGuest()">Add</button>
       </div>
+
+      <div id="lineupPreview" class="lineup-preview hidden">
+        <h4>🎯 Game 1 lineup</h4>
+        <p class="hint" style="font-size:12.5px;margin:2px 0 12px;">Since everyone starts even, the first game's matchup is really up to you. Tap two names to swap them, or shuffle for a random start. From game 2 onward, the ladder takes over automatically based on results.</p>
+        <div id="lineupCourts"></div>
+        <button type="button" class="btn-ghost" style="width:100%;margin-top:4px;padding:11px;" onclick="shuffleLineup()">🔀 Shuffle lineup</button>
+      </div>
       <div class="row-opts">
         <label>Number of games:</label>
         <input type="number" id="totalRounds" value="8" min="3" max="20">
@@ -577,7 +596,7 @@
         <div class="trophy">🏆</div>
         <div>
           <h3>The Big Finale!</h3>
-          <p>Court A now has the top 4 party-point earners — best plays best, no matter who they've already faced.</p>
+          <p>Court A now has today's top 4 — best plays best, no matter who they've already faced.</p>
         </div>
       </div>
     </div>
@@ -595,7 +614,7 @@
     </div>
 
     <div class="scoreboard">
-      <h3>🏆 Scoreboard</h3>
+      <h3>🥒 Who's playing</h3>
       <div class="hint-row">✎ tap a name to fix a typo &middot; 📍 tap an avatar to mark yourself</div>
       <div class="board-list" id="boardList"></div>
     </div>
@@ -609,7 +628,7 @@
   <!-- DONE SCREEN -->
   <div id="done" class="setup-card done-card hidden">
     <h2>🎉 That's a wrap!</h2>
-    <div class="champ-name" id="champName"></div>
+    <div class="champ-name" id="champName">🥒 Great games, everyone!</div>
     <div class="board-list" id="finalStandings" style="text-align:left;margin:20px 0;"></div>
     <button class="btn-big" onclick="shareRecapCard()">📸 Share recap card</button>
     <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="location.reload()">Start a new party</button>
@@ -630,8 +649,8 @@
       <div class="guide-section">
         <div class="guide-icon">🎯</div>
         <div>
-          <h4>Party Points</h4>
-          <p>Everyone starts at <b>0</b>. Win a game and you gain points; lose one and you drop a few. The margin matters a little too — a convincing win earns a bit more, and a close loss costs a bit less. It's not trying to be a precise ranking system — just enough to sort out who's playing well today.</p>
+          <h4>No scores, no rankings</h4>
+          <p>There's no visible leaderboard here on purpose. Behind the scenes, the app keeps a light internal number just to help pick fair, balanced teams each round — but nobody sees a score, a rank, or a "bottom of the list." What you'll see next to your name is just a quick word of encouragement based on how your last game went.</p>
         </div>
       </div>
 
@@ -743,6 +762,9 @@ function initials(name){
   return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || name.slice(0,2).toUpperCase();
 }
 
+let lineupOrder = [];   // the actual game-1 order — starts matching selection, but can be rearranged
+let swapPending = null; // index of the first name tapped, waiting for a second tap to swap with
+
 function renderChipGrid(){
   const grid = document.getElementById('chipGrid');
   const allNames = [...getKnownPlayers(), ...guestPlayers];
@@ -751,6 +773,69 @@ function renderChipGrid(){
     return `<button type="button" class="player-chip ${isSelected?'selected':''}" onclick="toggleChip('${escapeHtmlAttr(n).replace(/'/g,"\\'")}')">${escapeHtml(n)}</button>`;
   }).join('');
   document.getElementById('playerCounter').textContent = `${selectedPlayers.length} / 8 selected`;
+  updateLineupPreview();
+}
+
+function updateLineupPreview(){
+  const preview = document.getElementById('lineupPreview');
+  if(selectedPlayers.length !== 8){
+    preview.classList.add('hidden');
+    lineupOrder = [];
+    return;
+  }
+  // Only reset the order if the actual set of 8 people changed — so tweaking
+  // something else doesn't wipe out a lineup you already arranged.
+  const sameSet = lineupOrder.length === 8 && selectedPlayers.every(n => lineupOrder.includes(n));
+  if(!sameSet) lineupOrder = [...selectedPlayers];
+  swapPending = null;
+  preview.classList.remove('hidden');
+  renderLineupCourts();
+}
+
+function renderLineupCourts(){
+  const el = document.getElementById('lineupCourts');
+  const slot = (i)=>{
+    const picked = swapPending === i ? 'picked' : '';
+    return `<div class="lineup-name ${picked}" onclick="pickLineupSlot(${i})">${escapeHtml(lineupOrder[i])}</div>`;
+  };
+  el.innerHTML = `
+    <div class="lineup-court">
+      <div class="lineup-court-label">Court A</div>
+      <div class="lineup-teams">
+        <div class="lineup-team">${slot(0)}${slot(3)}</div>
+        <div class="lineup-vs">vs</div>
+        <div class="lineup-team">${slot(1)}${slot(2)}</div>
+      </div>
+    </div>
+    <div class="lineup-court">
+      <div class="lineup-court-label">Court B</div>
+      <div class="lineup-teams">
+        <div class="lineup-team">${slot(4)}${slot(7)}</div>
+        <div class="lineup-vs">vs</div>
+        <div class="lineup-team">${slot(5)}${slot(6)}</div>
+      </div>
+    </div>`;
+}
+
+function pickLineupSlot(i){
+  if(swapPending === null){
+    swapPending = i;
+  } else if(swapPending === i){
+    swapPending = null;
+  } else {
+    [lineupOrder[swapPending], lineupOrder[i]] = [lineupOrder[i], lineupOrder[swapPending]];
+    swapPending = null;
+  }
+  renderLineupCourts();
+}
+
+function shuffleLineup(){
+  for(let i = lineupOrder.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [lineupOrder[i], lineupOrder[j]] = [lineupOrder[j], lineupOrder[i]];
+  }
+  swapPending = null;
+  renderLineupCourts();
 }
 
 function toggleChip(name){
@@ -954,7 +1039,7 @@ async function startNewParty(){
       alert(`Pick exactly 8 players first — you've got ${selectedPlayers.length} selected.`);
       return;
     }
-    const names = [...selectedPlayers];
+    const names = lineupOrder.length === 8 ? [...lineupOrder] : [...selectedPlayers];
     totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
     players = names.map((n,i)=>({
       id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
@@ -1219,6 +1304,19 @@ function avatarHtml(id, size, clickable){
   return `<div class="avatar" ${clickBits}background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${escapeHtml(initials(p.name))}</div>`;
 }
 
+// One-word encouragement instead of a score — deliberately not comparative.
+// It reacts to a player's own most recent result, not to how they stack up
+// against anyone else, so there's no "top" or "bottom" implied by it.
+const MOTIVATION_WORDS = {
+  none: ['Ready! 💪','Let\'s go! 🎾','Warming up! 🔥','Game time! ⚡'],
+  won:  ['On fire! 🔥','Crushing it! 💥','Great game! 🙌','Nice win! 🎉','Rolling! 🚀'],
+  lost: ['Fighting hard! 💪','Stay hungry! 🔥','Bouncing back! 🙌','Next one\'s yours! 🎯','Keep swinging! 🏓']
+};
+function motivationTag(p){
+  const pool = p.games === 0 ? MOTIVATION_WORDS.none : (p.lastDelta >= 0 ? MOTIVATION_WORDS.won : MOTIVATION_WORDS.lost);
+  return pool[(p.id + p.games) % pool.length];
+}
+
 function meTag(id){
   return id === myPlayerId ? ' <span class="me-tag">📍 you</span>' : '';
 }
@@ -1239,30 +1337,23 @@ function render(){
   document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
   document.getElementById('undoBtn').style.display = undoSnapshot ? 'inline-flex' : 'none';
 
-  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
-
-  // podium (top 3)
-  const medalIcons = ['🥇','🥈','🥉'];
+  // A stable, non-competitive order — never sorted by performance, so there's
+  // no "top" or "bottom" of the list. Court assignment already reflects the
+  // ladder; nobody needs a second, more personal-feeling ranking on top of it.
+  const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
   const board = document.getElementById('boardList');
-  board.innerHTML = sorted.map((p,i)=>{
-    const deltaHtml = p.games>0
-      ? `<span class="delta ${p.lastDelta>=0?'up':'down'}">${p.lastDelta>=0?'+':''}${p.lastDelta}</span>` : '';
-    const rankHtml = i<3 ? `<span class="medal">${medalIcons[i]}</span>` : `#${i+1}`;
+  board.innerHTML = orderedPlayers.map(p=>{
+    const tag = motivationTag(p);
     return `
-    <div class="board-row ${i<3?'top3':''} ${p.id===myPlayerId?'is-me':''}">
-      <span class="rank">${rankHtml}</span>
+    <div class="board-row ${p.id===myPlayerId?'is-me':''}">
       ${avatarHtml(p.id,34,true)}
       <div class="info">
         <span class="pname">${editableName(p.id)}${meTag(p.id)}</span>
         <div class="meta">
           <span class="court-tag ${p.court}">Court ${p.court}</span>
-          <span class="wl">${p.wins}-${p.losses}</span>
         </div>
       </div>
-      <div class="pts-col">
-        <span class="pts">${Math.round(p.rating)}</span>
-        ${deltaHtml}
-      </div>
+      <span class="motivation-tag">${escapeHtml(tag)}</span>
     </div>`;
   }).join('');
 
@@ -1605,22 +1696,17 @@ function showDoneScreen(){
   if(pollTimer) clearInterval(pollTimer);
   if(clockTimer) clearInterval(clockTimer);
   document.getElementById('main').classList.add('hidden');
-  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
-  const champ = sorted[0];
-  document.getElementById('champName').textContent = '🥒 ' + champ.name;
 
-  const medalIcons = ['🥇','🥈','🥉'];
-  document.getElementById('finalStandings').innerHTML = sorted.map((p,i)=>{
-    const rankHtml = i<3 ? `<span class="medal">${medalIcons[i]}</span>` : `#${i+1}`;
+  const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
+  document.getElementById('finalStandings').innerHTML = orderedPlayers.map(p=>{
+    const tag = motivationTag(p);
     return `
-    <div class="board-row ${i<3?'top3':''} ${p.id===myPlayerId?'is-me':''}">
-      <span class="rank">${rankHtml}</span>
+    <div class="board-row ${p.id===myPlayerId?'is-me':''}">
       ${avatarHtml(p.id,34,true)}
       <div class="info">
         <span class="pname">${escapeHtml(p.name)}${meTag(p.id)}</span>
-        <div class="meta"><span class="wl">${p.wins}-${p.losses}</span></div>
       </div>
-      <div class="pts-col"><span class="pts">${Math.round(p.rating)}</span></div>
+      <span class="motivation-tag">${escapeHtml(tag)}</span>
     </div>`;
   }).join('');
 
@@ -1647,12 +1733,12 @@ function spawnConfetti(container){
 // Drawn straight onto a <canvas> — no image library, no external service,
 // works fully offline. Produces a PNG ready to drop into a group chat.
 function generateRecapCanvas(){
-  const sorted = [...players].sort((a,b)=>b.rating-a.rating);
+  const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
   const width = 720;
   const rowH = 68;
-  const headerH = 230;
+  const headerH = 170;
   const footerH = 60;
-  const height = headerH + sorted.length*rowH + footerH;
+  const height = headerH + orderedPlayers.length*rowH + footerH;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -1676,19 +1762,11 @@ function generateRecapCanvas(){
   ctx.fillStyle = '#8fa0ae';
   ctx.font = `600 16px ${FONT}`;
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
-  ctx.fillText('Final Results  •  ' + dateLabel, width/2, 84);
+  ctx.fillText(dateLabel, width/2, 84);
 
-  // champion block
-  const champ = sorted[0];
   ctx.fillStyle = '#FF2E9A';
-  ctx.font = `800 20px ${FONT}`;
-  ctx.fillText('🏆 CHAMPION', width/2, 134);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `800 32px ${FONT}`;
-  ctx.fillText(champ.name, width/2, 172);
-  ctx.fillStyle = '#8fa0ae';
-  ctx.font = `600 15px ${FONT}`;
-  ctx.fillText(`${Math.round(champ.rating)} pts  •  ${champ.wins}-${champ.losses}`, width/2, 196);
+  ctx.font = `800 22px ${FONT}`;
+  ctx.fillText('Great games, everyone! 🎉', width/2, 128);
 
   // divider
   ctx.strokeStyle = 'rgba(255,255,255,0.12)';
@@ -1697,9 +1775,8 @@ function generateRecapCanvas(){
   ctx.lineTo(width-40, headerH-14);
   ctx.stroke();
 
-  // standings rows
-  const medals = ['🥇','🥈','🥉'];
-  sorted.forEach((p,i)=>{
+  // roster — same order for everyone, no ranking, no points
+  orderedPlayers.forEach((p,i)=>{
     const y = headerH + i*rowH;
     if(i % 2 === 0){
       ctx.fillStyle = 'rgba(255,255,255,0.035)';
@@ -1708,21 +1785,14 @@ function generateRecapCanvas(){
     const midY = y + rowH/2;
 
     ctx.textAlign = 'left';
-    ctx.fillStyle = i<3 ? '#FFD700' : '#8fa0ae';
-    ctx.font = `800 20px ${FONT}`;
-    ctx.fillText(i<3 ? medals[i] : ('#'+(i+1)), 38, midY+7);
-
     ctx.fillStyle = '#ffffff';
     ctx.font = `700 20px ${FONT}`;
-    ctx.fillText(p.name, 92, midY+7);
+    ctx.fillText(p.name, 38, midY+7);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#39FF6A';
-    ctx.font = `800 20px ${FONT}`;
-    ctx.fillText(`${Math.round(p.rating)} pts`, width-38, midY+2);
-    ctx.fillStyle = '#8fa0ae';
-    ctx.font = `600 13px ${FONT}`;
-    ctx.fillText(`${p.wins}-${p.losses}`, width-38, midY+20);
+    ctx.font = `700 16px ${FONT}`;
+    ctx.fillText(motivationTag(p), width-38, midY+7);
   });
 
   // footer
