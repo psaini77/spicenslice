@@ -170,6 +170,14 @@
   }
   .guest-toggle-btn{width:100%;padding:11px;font-size:13px;margin-bottom:6px;}
 
+  .chip-summary{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:rgba(57,255,106,0.08);border:1px solid rgba(57,255,106,0.3);border-radius:12px;
+    padding:12px 14px;margin-bottom:14px;
+  }
+  .chip-summary span{font-weight:800;color:var(--pickle);font-size:14px;}
+  .chip-summary button{padding:7px 14px;font-size:12.5px;}
+
   .lineup-preview{margin:16px 0;padding:14px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);border-radius:14px;}
   .lineup-preview h4{font-size:16px;color:var(--sun);margin-bottom:4px;}
   .lineup-court{margin-bottom:14px;}
@@ -562,10 +570,14 @@
     <div id="newGameForm" class="hidden">
       <button class="btn-ghost back-to-vote-btn" onclick="showRoleChoice()">← Back</button>
       <h2>Add the players</h2>
-      <p class="hint">Tap 8 names to get the party started — no typing needed. Everyone plays every game — 4v4 across two courts — so with ~15&nbsp;min games you'll fit about 8 games each in 2 hours. Winners work their way up to the top court, so matchups stay close and fun. The very last game is always the big one: best vs. best, no matter who's already faced who.</p>
+      <p class="hint">Tap 8 names — no typing needed.</p>
       <div class="player-counter" id="playerCounter">0 / 8 selected</div>
       <div class="chip-grid" id="chipGrid"></div>
-      <button type="button" class="btn-ghost guest-toggle-btn" onclick="toggleGuestInput()">➕ Someone not on this list</button>
+      <div class="chip-summary hidden" id="chipSummary">
+        <span id="chipSummaryText">✓ 8 players ready</span>
+        <button type="button" class="btn-ghost" onclick="expandChipGrid()">Change</button>
+      </div>
+      <button type="button" class="btn-ghost guest-toggle-btn" id="guestToggleBtn" onclick="toggleGuestInput()">➕ Someone not on this list</button>
       <div class="name-tag hidden" id="guestInputWrap" style="margin-top:10px;">
         <div class="avatar" style="background:#4C6EDB;">➕</div>
         <input id="guestNameInput" placeholder="Type a guest's name, then tap Add" maxlength="24" autocomplete="off">
@@ -787,6 +799,9 @@ function initials(name){
 let lineupOrder = [];   // the actual game-1 order — starts matching selection, but can be rearranged
 let swapPending = null; // index of the first name tapped, waiting for a second tap to swap with
 
+let chipGridExpanded = true;
+let prevSelectedCount = 0;
+
 function renderChipGrid(){
   const grid = document.getElementById('chipGrid');
   const allNames = [...getKnownPlayers(), ...guestPlayers];
@@ -795,7 +810,38 @@ function renderChipGrid(){
     return `<button type="button" class="player-chip ${isSelected?'selected':''}" onclick="toggleChip('${escapeHtmlAttr(n).replace(/'/g,"\\'")}')">${escapeHtml(n)}</button>`;
   }).join('');
   document.getElementById('playerCounter').textContent = `${selectedPlayers.length} / 8 selected`;
+
+  // Below 8, always show the full picker. The moment you hit exactly 8, it
+  // auto-collapses into a summary so the lineup and Start button aren't
+  // buried under a grid that's already done its job — the main scroll fix.
+  if(selectedPlayers.length < 8) chipGridExpanded = true;
+  const justReached8 = selectedPlayers.length === 8 && prevSelectedCount < 8;
+  if(justReached8) chipGridExpanded = false;
+  prevSelectedCount = selectedPlayers.length;
+
+  const showGrid = chipGridExpanded;
+  document.getElementById('chipGrid').classList.toggle('hidden', !showGrid);
+  document.getElementById('playerCounter').classList.toggle('hidden', !showGrid);
+  document.getElementById('guestToggleBtn').classList.toggle('hidden', !showGrid);
+  document.getElementById('chipSummary').classList.toggle('hidden', showGrid);
+  if(!showGrid){
+    document.getElementById('chipSummaryText').textContent = `✓ ${selectedPlayers.join(', ')}`;
+  }
+
   updateLineupPreview();
+
+  if(justReached8){
+    // Just completed the 8th pick — jump straight to the lineup instead of
+    // making someone scroll past the (now-collapsed) picker to find it.
+    setTimeout(()=>{
+      document.getElementById('lineupPreview').scrollIntoView({ behavior:'smooth', block:'start' });
+    }, 80);
+  }
+}
+
+function expandChipGrid(){
+  chipGridExpanded = true;
+  renderChipGrid();
 }
 
 function updateLineupPreview(){
