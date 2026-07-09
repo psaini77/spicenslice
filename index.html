@@ -172,20 +172,40 @@
 
   .lineup-preview{margin:16px 0;padding:14px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);border-radius:14px;}
   .lineup-preview h4{font-size:16px;color:var(--sun);margin-bottom:4px;}
-  .lineup-court{margin-bottom:12px;}
+  .lineup-court{margin-bottom:14px;}
   .lineup-court:last-child{margin-bottom:0;}
-  .lineup-court-label{font-size:11px;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-  .lineup-teams{display:flex;align-items:center;gap:8px;}
+  .lineup-court-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+  .lineup-court-label{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;}
+  .lineup-court.court-a .lineup-court-label{color:var(--court-blue);}
+  .lineup-court.court-b .lineup-court-label{color:var(--grape);}
+  .lineup-shuffle-one{
+    font-size:11px;font-weight:700;padding:4px 9px;border-radius:8px;background:transparent;
+    border:1px solid rgba(234,246,255,0.18);color:var(--ink-dim);-webkit-tap-highlight-color:transparent;
+  }
+  .lineup-shuffle-one:active{transform:scale(0.94);}
+  .lineup-teams{display:flex;align-items:stretch;gap:8px;}
   .lineup-team{
-    flex:1;background:var(--card);border:1.5px solid rgba(234,246,255,0.12);border-radius:10px;
-    padding:8px 6px;display:flex;flex-direction:column;gap:4px;
+    flex:1;border-radius:12px;padding:9px 6px;display:flex;flex-direction:column;gap:5px;
+    border:1.5px solid rgba(234,246,255,0.14);background:rgba(255,255,255,0.02);
   }
-  .lineup-vs{font-family:'Baloo 2',sans-serif;color:var(--ink-dim);font-size:13px;flex:none;}
+  .lineup-court.court-a .lineup-team{border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.05);}
+  .lineup-court.court-b .lineup-team{border-color:rgba(176,38,255,0.3);background:rgba(176,38,255,0.05);}
+  .lineup-vs{font-family:'Baloo 2',sans-serif;color:var(--ink-dim);font-size:14px;flex:none;font-weight:700;}
   .lineup-name{
-    padding:7px 4px;border-radius:7px;font-size:13px;font-weight:700;text-align:center;color:var(--ink);
-    background:rgba(255,255,255,0.03);-webkit-tap-highlight-color:transparent;
+    padding:9px 4px;border-radius:8px;font-size:13.5px;font-weight:700;text-align:center;color:var(--ink);
+    background:rgba(11,14,20,0.4);-webkit-tap-highlight-color:transparent;
+    transition:transform .12s ease, background .12s ease, box-shadow .12s ease;
   }
-  .lineup-name.picked{background:rgba(255,46,154,0.25);box-shadow:0 0 0 1.5px var(--sun);color:#fff;}
+  .lineup-name:active{transform:scale(0.95);}
+  .lineup-name.picked{
+    background:rgba(255,215,0,0.22);box-shadow:0 0 0 2px #FFD700, 0 0 14px rgba(255,215,0,0.35);
+    color:#fff;transform:scale(1.04);
+  }
+  .lineup-name.picked::before{content:'👆 ';}
+  .lineup-name.swapped{animation:swapPop .35s ease;}
+  @keyframes swapPop{0%{transform:scale(1.12);}100%{transform:scale(1);}}
+  .lineup-shuffle-all{width:100%;margin-top:10px;padding:11px;}
+
   .sync-check-banner{
     font-size:12.5px;font-weight:600;border-radius:10px;padding:9px 12px;margin:10px 0 4px;
     display:flex;align-items:center;gap:8px;
@@ -396,9 +416,11 @@
   .done-card{text-align:center;padding:44px 20px;position:relative;overflow:hidden;}
   .done-card h2{font-size:34px;color:var(--coral);text-shadow:0 0 14px rgba(255,93,58,0.4);}
   .done-card .champ-name{
-    font-family:'Baloo 2';font-weight:700;font-size:52px;margin:14px 0;color:var(--pickle);
-    text-shadow:0 0 20px rgba(57,255,106,0.45);
+    font-family:'Manrope';font-weight:800;font-size:22px;margin:14px 0;color:var(--pickle);
+    text-shadow:0 0 14px rgba(57,255,106,0.35);line-height:1.4;
   }
+  .board-row.standout{background:rgba(255,215,0,0.06);box-shadow:inset 3px 0 0 #FFD700;}
+  .standout-badge{filter:drop-shadow(0 0 4px rgba(255,215,0,0.7));}
   .confetti{position:absolute;top:-20px;width:8px;height:14px;opacity:0.85;animation:fall linear forwards;border-radius:2px;}
   @keyframes fall{to{transform:translateY(480px) rotate(360deg);opacity:0.2;}}
 
@@ -552,9 +574,9 @@
 
       <div id="lineupPreview" class="lineup-preview hidden">
         <h4>🎯 Game 1 lineup</h4>
-        <p class="hint" style="font-size:12.5px;margin:2px 0 12px;">Since everyone starts even, the first game's matchup is really up to you. Tap two names to swap them, or shuffle for a random start. From game 2 onward, the ladder takes over automatically based on results.</p>
+        <p class="hint" style="font-size:12.5px;margin:2px 0 14px;">Everyone starts even, so this first matchup is yours to set. Tap two names to swap them. From game 2 on, the ladder takes over automatically.</p>
         <div id="lineupCourts"></div>
-        <button type="button" class="btn-ghost" style="width:100%;margin-top:4px;padding:11px;" onclick="shuffleLineup()">🔀 Shuffle lineup</button>
+        <button type="button" class="btn-ghost lineup-shuffle-all" onclick="shuffleLineup()">🔀 Shuffle everyone</button>
       </div>
       <div class="row-opts">
         <label>Number of games:</label>
@@ -658,7 +680,7 @@
         <div class="guide-icon">🪜</div>
         <div>
           <h4>The ladder: Court A vs Court B</h4>
-          <p><b>Court A</b> is the top court, <b>Court B</b> is the challenger court. After every game, the <b>losing team on Court A drops down</b> to Court B, and the <b>winning team on Court B moves up</b> to Court A. Everyone else stays put. Play well and you climb toward Court A; a rough game and you slide back — so matches stay close and nobody's stuck in a blowout all night.</p>
+          <p><b>Court A</b> is the top court, <b>Court B</b> is the challenger court. After every game, the <b>losing team on Court A drops down</b> to Court B, and the <b>winning team on Court B moves up</b> to Court A. Everyone else stays put. The whole point is that nobody's stuck in a blowout, and nobody's stuck in a hopeless mismatch — the courts quietly recalibrate so every game stays genuinely competitive for everyone on it.</p>
         </div>
       </div>
 
@@ -666,7 +688,7 @@
         <div class="guide-icon">🤝</div>
         <div>
           <h4>How teams get paired</h4>
-          <p>Within each court, the 4 players are ranked by their current points. The <b>strongest and weakest</b> team up against the <b>two in the middle</b> — that keeps teams roughly balanced instead of stacking all the best players together. If that exact pairing just happened, it's automatically reshuffled so you're not stuck with the identical matchup twice in a row.</p>
+          <p>Within each court, the 4 players are ranked internally (never shown to anyone). The <b>strongest and weakest</b> team up against the <b>two in the middle</b> — that keeps teams roughly even instead of stacking all the best players together. If that exact pairing just happened, it's automatically reshuffled so you're not stuck with the identical matchup twice in a row. All of this runs quietly in the background specifically so every game feels like a real, close contest — not to rank anyone.</p>
         </div>
       </div>
 
@@ -674,7 +696,7 @@
         <div class="guide-icon">🏆</div>
         <div>
           <h4>The final game</h4>
-          <p>For the very last game, the ladder logic is set aside for one moment: the <b>top 4 players by points</b> are placed on Court A together, no matter which court they were on or who they've already played. Best plays best, one time, to settle it.</p>
+          <p>For the very last game, the ladder logic is set aside for one moment: today's top 4 are placed on Court A together, no matter which court they were on or who they've already played. Best plays best, one time, to settle it.</p>
         </div>
       </div>
 
@@ -792,29 +814,40 @@ function updateLineupPreview(){
   renderLineupCourts();
 }
 
+let lastSwapped = []; // indices just swapped, so we can flash them for feedback
+
 function renderLineupCourts(){
   const el = document.getElementById('lineupCourts');
   const slot = (i)=>{
-    const picked = swapPending === i ? 'picked' : '';
-    return `<div class="lineup-name ${picked}" onclick="pickLineupSlot(${i})">${escapeHtml(lineupOrder[i])}</div>`;
+    const classes = ['lineup-name'];
+    if(swapPending === i) classes.push('picked');
+    if(lastSwapped.includes(i)) classes.push('swapped');
+    return `<div class="${classes.join(' ')}" onclick="pickLineupSlot(${i})">${escapeHtml(lineupOrder[i])}</div>`;
   };
   el.innerHTML = `
-    <div class="lineup-court">
-      <div class="lineup-court-label">Court A</div>
+    <div class="lineup-court court-a">
+      <div class="lineup-court-head">
+        <span class="lineup-court-label">🎾 Court A</span>
+        <button type="button" class="lineup-shuffle-one" onclick="shuffleLineup('A')">🔀 shuffle</button>
+      </div>
       <div class="lineup-teams">
         <div class="lineup-team">${slot(0)}${slot(3)}</div>
         <div class="lineup-vs">vs</div>
         <div class="lineup-team">${slot(1)}${slot(2)}</div>
       </div>
     </div>
-    <div class="lineup-court">
-      <div class="lineup-court-label">Court B</div>
+    <div class="lineup-court court-b">
+      <div class="lineup-court-head">
+        <span class="lineup-court-label">🎾 Court B</span>
+        <button type="button" class="lineup-shuffle-one" onclick="shuffleLineup('B')">🔀 shuffle</button>
+      </div>
       <div class="lineup-teams">
         <div class="lineup-team">${slot(4)}${slot(7)}</div>
         <div class="lineup-vs">vs</div>
         <div class="lineup-team">${slot(5)}${slot(6)}</div>
       </div>
     </div>`;
+  lastSwapped = [];
 }
 
 function pickLineupSlot(i){
@@ -824,19 +857,25 @@ function pickLineupSlot(i){
     swapPending = null;
   } else {
     [lineupOrder[swapPending], lineupOrder[i]] = [lineupOrder[i], lineupOrder[swapPending]];
+    lastSwapped = [swapPending, i];
     swapPending = null;
   }
   renderLineupCourts();
 }
 
-function shuffleLineup(){
-  for(let i = lineupOrder.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [lineupOrder[i], lineupOrder[j]] = [lineupOrder[j], lineupOrder[i]];
+function shuffleLineup(court){
+  // No court given = shuffle everyone; 'A' or 'B' = just that court's 4
+  const range = court === 'A' ? [0,1,2,3] : court === 'B' ? [4,5,6,7] : [0,1,2,3,4,5,6,7];
+  for(let k = range.length - 1; k > 0; k--){
+    const j = Math.floor(Math.random() * (k + 1));
+    const a = range[k], b = range[j];
+    [lineupOrder[a], lineupOrder[b]] = [lineupOrder[b], lineupOrder[a]];
   }
   swapPending = null;
+  lastSwapped = [...range];
   renderLineupCourts();
 }
+
 
 function toggleChip(name){
   const idx = selectedPlayers.indexOf(name);
@@ -1308,9 +1347,9 @@ function avatarHtml(id, size, clickable){
 // It reacts to a player's own most recent result, not to how they stack up
 // against anyone else, so there's no "top" or "bottom" implied by it.
 const MOTIVATION_WORDS = {
-  none: ['Ready! 💪','Let\'s go! 🎾','Warming up! 🔥','Game time! ⚡'],
-  won:  ['On fire! 🔥','Crushing it! 💥','Great game! 🙌','Nice win! 🎉','Rolling! 🚀'],
-  lost: ['Fighting hard! 💪','Stay hungry! 🔥','Bouncing back! 🙌','Next one\'s yours! 🎯','Keep swinging! 🏓']
+  none: ['Ready to dink! 🥒','Let\'s rally! 🎾','Kitchen bound! 🍳','Warming up! 🔥'],
+  won:  ['Lob Queen! 👑','Dink Master! 🥒','Net Ninja! 🥷','Baseline Boss! 💪','Rally Royalty! 👑','Smash Queen! 💥','Third Shot Star! ⭐','Kitchen Commander! 🍳'],
+  lost: ['Comeback Queen! 🔄','Paddle Warrior! ⚔️','Rising Baller! 📈','Grit Queen! 💪','Next Point Champion! 🎯','Still Dangerous! 🔥']
 };
 function motivationTag(p){
   const pool = p.games === 0 ? MOTIVATION_WORDS.none : (p.lastDelta >= 0 ? MOTIVATION_WORDS.won : MOTIVATION_WORDS.lost);
@@ -1692,19 +1731,35 @@ function finishTournament(){
   showDoneScreen();
 }
 
+const STANDOUT_PHRASES = [
+  n => `🌟 Standout of the day: ${n}!`,
+  n => `🔥 ${n} brought the heat today!`,
+  n => `🏓 ${n} was on absolute fire!`,
+  n => `⚡ All eyes on ${n} today!`,
+  n => `🚀 ${n} had the game of the day!`
+];
+
 function showDoneScreen(){
   if(pollTimer) clearInterval(pollTimer);
   if(clockTimer) clearInterval(clockTimer);
   document.getElementById('main').classList.add('hidden');
 
+  // One standout gets a fun callout — everyone else stays on equal footing,
+  // same styling, same treatment, no ranking among the rest.
+  const standout = [...players].sort((a,b)=>b.rating-a.rating)[0];
+  const phrase = STANDOUT_PHRASES[Math.floor(Math.random()*STANDOUT_PHRASES.length)];
+  document.getElementById('champName').innerHTML =
+    `<span class="standout-line">${escapeHtml(phrase(standout.name))}</span>`;
+
   const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
   document.getElementById('finalStandings').innerHTML = orderedPlayers.map(p=>{
     const tag = motivationTag(p);
+    const isStandout = p.id === standout.id;
     return `
-    <div class="board-row ${p.id===myPlayerId?'is-me':''}">
+    <div class="board-row ${p.id===myPlayerId?'is-me':''} ${isStandout?'standout':''}">
       ${avatarHtml(p.id,34,true)}
       <div class="info">
-        <span class="pname">${escapeHtml(p.name)}${meTag(p.id)}</span>
+        <span class="pname">${escapeHtml(p.name)}${isStandout?' <span class="standout-badge">🌟</span>':''}${meTag(p.id)}</span>
       </div>
       <span class="motivation-tag">${escapeHtml(tag)}</span>
     </div>`;
@@ -1734,6 +1789,7 @@ function spawnConfetti(container){
 // works fully offline. Produces a PNG ready to drop into a group chat.
 function generateRecapCanvas(){
   const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
+  const standout = [...players].sort((a,b)=>b.rating-a.rating)[0];
   const width = 720;
   const rowH = 68;
   const headerH = 170;
@@ -1766,7 +1822,7 @@ function generateRecapCanvas(){
 
   ctx.fillStyle = '#FF2E9A';
   ctx.font = `800 22px ${FONT}`;
-  ctx.fillText('Great games, everyone! 🎉', width/2, 128);
+  ctx.fillText(`🌟 Standout of the day: ${standout.name}!`, width/2, 128);
 
   // divider
   ctx.strokeStyle = 'rgba(255,255,255,0.12)';
@@ -1775,19 +1831,22 @@ function generateRecapCanvas(){
   ctx.lineTo(width-40, headerH-14);
   ctx.stroke();
 
-  // roster — same order for everyone, no ranking, no points
+  // roster — same order and styling for everyone except the one standout highlight
   orderedPlayers.forEach((p,i)=>{
     const y = headerH + i*rowH;
-    if(i % 2 === 0){
-      ctx.fillStyle = 'rgba(255,255,255,0.035)';
-      ctx.fillRect(20, y, width-40, rowH);
+    const isStandout = p.id === standout.id;
+    ctx.fillStyle = isStandout ? 'rgba(255,215,0,0.08)' : (i % 2 === 0 ? 'rgba(255,255,255,0.035)' : 'transparent');
+    if(ctx.fillStyle !== 'transparent') ctx.fillRect(20, y, width-40, rowH);
+    if(isStandout){
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(20, y, 4, rowH);
     }
     const midY = y + rowH/2;
 
     ctx.textAlign = 'left';
     ctx.fillStyle = '#ffffff';
     ctx.font = `700 20px ${FONT}`;
-    ctx.fillText(p.name, 38, midY+7);
+    ctx.fillText(p.name + (isStandout ? ' 🌟' : ''), 38, midY+7);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#39FF6A';
