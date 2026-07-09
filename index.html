@@ -675,6 +675,7 @@
     <div class="champ-name" id="champName">🥒 Great games, everyone!</div>
     <div class="board-list" id="finalStandings" style="text-align:left;margin:20px 0;"></div>
     <button class="btn-big" onclick="shareRecapCard()">📸 Share recap card</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="shareCommentaryCard()">🎙️ Share commentary card</button>
     <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="location.reload()">Start a new party</button>
   </div>
 
@@ -694,23 +695,23 @@
         <div class="guide-icon">🎯</div>
         <div>
           <h4>No scores, no rankings</h4>
-          <p>There's no visible leaderboard here on purpose. Behind the scenes, the app keeps a light internal number just to help pick fair, balanced teams each round — but nobody sees a score, a rank, or a "bottom of the list." What you'll see next to your name is just a quick word of encouragement based on how your last game went.</p>
+          <p>There's nothing to compare here — just names, courts, and a quick word of encouragement based on your last game. It's all about a fun, fair game for everyone.</p>
         </div>
       </div>
 
       <div class="guide-section">
-        <div class="guide-icon">🪜</div>
+        <div class="guide-icon">☀️</div>
         <div>
           <h4>Sunshine Court &amp; Breeze Court</h4>
-          <p>Games rotate between the two courts based on results — a winning pair swaps over, everyone else keeps playing together. It's not about one court being "better" — it's just how the app keeps every game close, instead of the same foursome getting stuck in a lopsided match all day.</p>
+          <p>Games rotate between the two courts each round, so matchups stay fresh and fun all day — nobody's stuck with the same group for long.</p>
         </div>
       </div>
 
       <div class="guide-section">
         <div class="guide-icon">🤝</div>
         <div>
-          <h4>How teams get paired</h4>
-          <p>Behind the scenes, the app keeps a quiet internal number for each player — never shown to anyone — just to help split each foursome into two roughly even teams instead of stacking all the strongest players together. If the same pairing just happened, it's automatically reshuffled so you're not stuck with an identical matchup twice in a row. The whole point is that every game feels like a real, fun contest — not to rank anyone.</p>
+          <h4>Fresh teams every game</h4>
+          <p>Partners change every round, and teams are set up to keep games close and fun for everyone on the court — good rallies, real competition, no easy blowouts.</p>
         </div>
       </div>
 
@@ -718,7 +719,7 @@
         <div class="guide-icon">🏆</div>
         <div>
           <h4>The final game</h4>
-          <p>For the very last game of the day, everyone gathers for one fun finish on Sunshine Court together — a nice way to close things out, whatever kind of day it's been.</p>
+          <p>For the last game of the day, everyone gathers for one fun finish together — a nice way to wrap things up, whatever kind of day it's been.</p>
         </div>
       </div>
 
@@ -726,7 +727,7 @@
         <div class="guide-icon">🔄</div>
         <div>
           <h4>Live sync</h4>
-          <p>Every score you submit saves instantly and shows up on everyone else's phone using the same party code, usually within a few seconds. The little badge in the top corner tells you if your device is connected.</p>
+          <p>Scores save instantly and show up on everyone's phone within a few seconds, using the same party code. The badge in the corner shows you're connected.</p>
         </div>
       </div>
 
@@ -734,7 +735,7 @@
         <div class="guide-icon">🎙️</div>
         <div>
           <h4>Game commentary</h4>
-          <p>After each game, you'll get a quick reaction line — calling out a blowout, a nail-biter, an upset, or a big final-game finish. It's a scripted picker, not a live AI writing fresh text — no account or cost needed, and it still works offline.</p>
+          <p>After each game, you'll get a fun, lighthearted line about how it went — always upbeat, never at anyone's expense. At the end of the day, you can share the whole recap straight to your group chat.</p>
         </div>
       </div>
 
@@ -742,7 +743,7 @@
         <div class="guide-icon">🟢</div>
         <div>
           <h4>Who serves first</h4>
-          <p>Each game, one player on the court gets a little green dot — that's who serves first. It's picked automatically, favoring whoever's served first the least so far, so the honor rotates fairly across everyone over the whole session instead of always falling to the same person.</p>
+          <p>Each game, one player gets a little green dot — that's who serves first. It rotates automatically so the honor is shared fairly across everyone over the day.</p>
         </div>
       </div>
 
@@ -2029,6 +2030,135 @@ function generateRecapCanvas(){
   ctx.fillText('🏓 See you next time!', width/2, height-24);
 
   return canvas;
+}
+
+function wrapCanvasText(ctx, text, maxWidth){
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  words.forEach(word=>{
+    const test = current ? current + ' ' + word : word;
+    if(ctx.measureText(test).width > maxWidth && current){
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  });
+  if(current) lines.push(current);
+  return lines;
+}
+
+function generateCommentaryCanvas(){
+  const width = 720;
+  const margin = 40;
+  const contentWidth = width - margin*2;
+  const FONT = 'Manrope, Arial, sans-serif';
+
+  // Measure pass first, so we can size the canvas to fit everything exactly —
+  // commentary lines vary in length, so this avoids cutting anything off.
+  const measureCanvas = document.createElement('canvas');
+  const mctx = measureCanvas.getContext('2d');
+  mctx.font = `500 15px ${FONT}`;
+
+  const gameBlocks = (history.length ? history : []).map(h=>{
+    const roundLabel = `Game ${h.round}${h.final ? ' 🏆' : ''}`;
+    const lines = [];
+    if(h.aCommentary) lines.push(...wrapCanvasText(mctx, h.aCommentary, contentWidth));
+    if(h.bCommentary) lines.push(...wrapCanvasText(mctx, h.bCommentary, contentWidth));
+    return { roundLabel, lines };
+  });
+
+  const headerH = 110;
+  const footerH = 50;
+  const lineH = 23;
+  const blockGap = 16;
+  const roundLabelH = 24;
+  let contentHeight = gameBlocks.length ? 0 : 40;
+  gameBlocks.forEach(b=>{ contentHeight += roundLabelH + b.lines.length*lineH + blockGap; });
+  const height = headerH + contentHeight + footerH;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0,0,0,height);
+  bg.addColorStop(0, '#161a24');
+  bg.addColorStop(1, '#0b0e14');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,width,height);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#39FF6A';
+  ctx.font = `800 32px ${FONT}`;
+  ctx.fillText('🥒 PICKLE PARTY', width/2, 48);
+
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 14px ${FONT}`;
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+  ctx.fillText(dateLabel + '  •  Game Recap', width/2, 74);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.moveTo(margin, headerH-14);
+  ctx.lineTo(width-margin, headerH-14);
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+  let y = headerH + 14;
+  if(!gameBlocks.length){
+    ctx.fillStyle = '#8fa0ae';
+    ctx.font = `500 15px ${FONT}`;
+    ctx.fillText('No games recorded today.', margin, y);
+  }
+  gameBlocks.forEach(b=>{
+    ctx.fillStyle = '#FF2E9A';
+    ctx.font = `800 15px ${FONT}`;
+    ctx.fillText(b.roundLabel, margin, y);
+    y += roundLabelH;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `500 15px ${FONT}`;
+    b.lines.forEach(line=>{
+      ctx.fillText(line, margin, y);
+      y += lineH;
+    });
+    y += blockGap;
+  });
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('🏓 See you next time!', width/2, height-20);
+
+  return canvas;
+}
+
+function shareCommentaryCard(){
+  const canvas = generateCommentaryCanvas();
+  canvas.toBlob(async (blob)=>{
+    if(!blob) return;
+    const file = new File([blob], 'pickle-party-recap.png', { type: 'image/png' });
+
+    if(navigator.canShare && navigator.canShare({ files: [file] })){
+      try{
+        await navigator.share({ files: [file], title: 'Pickle Party Recap' });
+        return;
+      }catch(err){
+        // user cancelled the share sheet, or it failed — fall through to download instead
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pickle-party-recap.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    alert('Saved! Find "pickle-party-recap.png" in your downloads to share it.');
+  }, 'image/png');
 }
 
 function shareRecapCard(){
