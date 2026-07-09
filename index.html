@@ -93,7 +93,8 @@
   /* ---------- BUTTONS ---------- */
   button{cursor:pointer;font-family:'Manrope',sans-serif;font-weight:700;border:1px solid rgba(234,246,255,0.14);
     border-radius:12px;transition:transform .15s ease, box-shadow .15s ease, background .15s ease;background:var(--card);color:var(--ink);
-    touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-touch-callout:none;}
   button:active{transform:translateY(1px);}
   .btn-big{
     background:linear-gradient(135deg, var(--sun), var(--sun-dark));
@@ -203,6 +204,8 @@
     padding:9px 4px;border-radius:8px;font-size:13.5px;font-weight:700;text-align:center;color:var(--ink);
     background:rgba(11,14,20,0.4);-webkit-tap-highlight-color:transparent;
     transition:transform .12s ease, background .12s ease, box-shadow .12s ease;
+    user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;
+    -webkit-touch-callout:none;touch-action:manipulation;
   }
   .lineup-name:active{transform:scale(0.95);}
   .lineup-name.picked{
@@ -387,7 +390,9 @@
     width:44px;height:44px;border-radius:50%;font-size:22px;font-weight:800;line-height:1;
     background:rgba(11,14,20,0.7);border:1px solid rgba(255,255,255,0.3);color:var(--ink);
     display:flex;align-items:center;justify-content:center;flex:none;padding:0;
-    -webkit-tap-highlight-color:transparent;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;
+    -webkit-touch-callout:none;touch-action:manipulation;
   }
   .step-btn:active{transform:scale(0.92);background:rgba(255,46,154,0.4);}
   .score-display{
@@ -1394,17 +1399,51 @@ function avatarHtml(id, size, clickable){
   return `<div class="avatar" ${clickBits}background:${p.color};width:${size}px;height:${size}px;line-height:${size}px;">${escapeHtml(initials(p.name))}</div>`;
 }
 
-// One-word encouragement instead of a score — deliberately not comparative.
-// It reacts to a player's own most recent result, not to how they stack up
-// against anyone else, so there's no "top" or "bottom" implied by it.
+// Encouragement instead of a score — reacts to a player's own most recent
+// result, not to how they stack up against anyone else. Pools are sized to 8
+// so everyone can get a genuinely different tag at once, never repeated
+// within the same status group in a given game.
 const MOTIVATION_WORDS = {
-  none: ['Ready 🥒','Let\'s rally 🎾','Kitchen bound 🍳','Warming up 🔥'],
-  won:  ['Lob Queen 👑','Dink Master 🥒','Net Ninja 🥷','Baseline Boss 💪','Smash Queen 💥','Rally Star ⭐','Kitchen King 🍳'],
-  lost: ['Comeback Queen 🔄','Paddle Warrior ⚔️','Rising Baller 📈','Grit Queen 💪','Still Dangerous 🔥']
+  none: ['Ready 🥒','Let\'s rally 🎾','Kitchen bound 🍳','Warming up 🔥','Paddle up 🏓','Game face on 😎','Serve\'s up ⚡','Locked in 🎯'],
+  won:  ['Lob Queen 👑','Dink Diva 🥒','Net Ninja 🥷','Baseline Boss 💪','Smash Queen 💥','Rally Star ⭐','Kitchen Queen 🍳','Ace Queen 🎯'],
+  lost: ['Comeback Queen 🔄','Paddle Warrior ⚔️','Rising Baller 📈','Grit Queen 💪','Still Dangerous 🔥','Next Point Queen 🎯','Fierce Competitor 🦁','Determined Diva 💫']
 };
-function motivationTag(p){
-  const pool = p.games === 0 ? MOTIVATION_WORDS.none : (p.lastDelta >= 0 ? MOTIVATION_WORDS.won : MOTIVATION_WORDS.lost);
-  return pool[(p.id + p.games) % pool.length];
+
+// Simple seeded PRNG (mulberry32) so the shuffle is stable across re-renders
+// within the same game, but changes from game to game.
+function seededRandom(seed){
+  let t = seed + 0x6D2B79F5;
+  return function(){
+    t = (t + 0x6D2B79F5) | 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seededShuffle(arr, seed){
+  const rand = seededRandom(seed);
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Assigns every player a tag, guaranteeing nobody in the same status group
+// (just won / just lost / hasn't played yet) shares the same word right now.
+function assignMotivationTags(playerList){
+  const groups = { none: [], won: [], lost: [] };
+  playerList.forEach(p=>{
+    const status = p.games === 0 ? 'none' : (p.lastDelta >= 0 ? 'won' : 'lost');
+    groups[status].push(p);
+  });
+  const assigned = {};
+  Object.keys(groups).forEach(status=>{
+    const shuffled = seededShuffle(MOTIVATION_WORDS[status], roundNum * 31 + status.length);
+    groups[status].forEach((p,i)=>{ assigned[p.id] = shuffled[i % shuffled.length]; });
+  });
+  return assigned;
 }
 
 function meTag(id){
@@ -1431,9 +1470,10 @@ function render(){
   // no "top" or "bottom" of the list. Court assignment already reflects the
   // ladder; nobody needs a second, more personal-feeling ranking on top of it.
   const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
+  const tagMap = assignMotivationTags(players);
   const board = document.getElementById('boardList');
   board.innerHTML = orderedPlayers.map(p=>{
-    const tag = motivationTag(p);
+    const tag = tagMap[p.id];
     return `
     <div class="board-row ${p.id===myPlayerId?'is-me':''}">
       ${avatarHtml(p.id,30,true)}
@@ -1801,8 +1841,9 @@ function showDoneScreen(){
     `<span class="standout-line">${escapeHtml(phrase(standout.name))}</span>`;
 
   const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
+  const tagMap = assignMotivationTags(players);
   document.getElementById('finalStandings').innerHTML = orderedPlayers.map(p=>{
-    const tag = motivationTag(p);
+    const tag = tagMap[p.id];
     const isStandout = p.id === standout.id;
     return `
     <div class="board-row ${p.id===myPlayerId?'is-me':''} ${isStandout?'standout':''}">
@@ -1839,6 +1880,7 @@ function spawnConfetti(container){
 function generateRecapCanvas(){
   const orderedPlayers = [...players].sort((a,b)=>a.id-b.id);
   const standout = [...players].sort((a,b)=>b.rating-a.rating)[0];
+  const tagMap = assignMotivationTags(players);
   const width = 720;
   const rowH = 68;
   const headerH = 170;
@@ -1900,7 +1942,7 @@ function generateRecapCanvas(){
     ctx.textAlign = 'right';
     ctx.fillStyle = '#39FF6A';
     ctx.font = `700 16px ${FONT}`;
-    ctx.fillText(motivationTag(p), width-38, midY+7);
+    ctx.fillText(tagMap[p.id], width-38, midY+7);
   });
 
   // footer
