@@ -975,7 +975,7 @@ document.getElementById('partyCode').value = randomCode();
 const API_BASE = '/.netlify/functions/party';
 
 function snapshotState(){
-  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, courtNumbers, targetScore, savedAt: Date.now() };
+  return { players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, partyStartedAt, courtNumbers, targetScore, incomingPairs, savedAt: Date.now() };
 }
 
 // Runs once on page load, independent of any party code, so we know right away
@@ -1063,6 +1063,7 @@ function applyRemoteState(s){
   partyStartedAt = s.partyStartedAt || partyStartedAt;
   courtNumbers = s.courtNumbers || courtNumbers;
   targetScore = s.targetScore || targetScore;
+  incomingPairs = s.incomingPairs || { A: null, B: null };
 }
 
 function updateSyncBadge(){
@@ -1140,6 +1141,7 @@ async function startNewParty(){
       id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
       wins:0, losses:0, games:0, lastDelta:0, serveFirstCount:0
     }));
+    incomingPairs = { A: null, B: null };
     generatePairing();
     rememberPlayerNames(names);
     partyStartedAt = Date.now();
@@ -1324,6 +1326,8 @@ function goHome(){
 }
 
 // ---------- PAIRING LOGIC ----------
+let incomingPairs = { A: null, B: null }; // the two pairs arriving at each court this round, so we can break both of them up
+
 function generatePairing(){
   isFinal = (roundNum === totalRounds);
 
@@ -1331,27 +1335,48 @@ function generatePairing(){
     const sorted = [...players].sort((a,b)=>b.rating-a.rating);
     const topFour = sorted.slice(0,4).map(p=>p.id);
     players.forEach(p=>{ p.court = topFour.includes(p.id) ? 'A' : 'B'; });
+    // The final is a fresh, one-off regroup — no "incoming pairs" concept applies.
+    incomingPairs = { A: null, B: null };
   }
 
   pairing = {};
   ['A','B'].forEach(court=>{
     const group = players.filter(p=>p.court===court).sort((a,b)=>b.rating-a.rating);
-    const key = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
+    const pairsIn = incomingPairs[court];
     let t1, t2;
-    if(key === lastPairKey[court]){
-      t1 = [group[0].id, group[2].id];
-      t2 = [group[1].id, group[3].id];
-    } else if(Math.random() < 0.3){
-      // Most rounds balance strongest+weakest vs the middle two — but every
-      // so often, let the top two in this foursome play together instead.
-      // With a group this close in skill, this just adds natural variety
-      // without meaningfully hurting how competitive games feel overall.
-      t1 = [group[0].id, group[1].id];
-      t2 = [group[2].id, group[3].id];
+
+    if(pairsIn){
+      // Exactly 2 pairs are arriving here (the winners of both courts, or the
+      // losers of both courts) — break BOTH of them up so nobody keeps their
+      // partner from last round. There are two ways to cross them; pick
+      // whichever gives the more evenly-matched teams.
+      const [p1, p2] = pairsIn[0];
+      const [p3, p4] = pairsIn[1];
+      const optionX = { t1:[p1,p3], t2:[p2,p4] };
+      const optionY = { t1:[p1,p4], t2:[p2,p3] };
+      const spread = (opt) => {
+        const r1 = P(opt.t1[0]).rating + P(opt.t1[1]).rating;
+        const r2 = P(opt.t2[0]).rating + P(opt.t2[1]).rating;
+        return Math.abs(r1 - r2);
+      };
+      const chosen = spread(optionX) <= spread(optionY) ? optionX : optionY;
+      t1 = chosen.t1; t2 = chosen.t2;
     } else {
-      t1 = [group[0].id, group[3].id];
-      t2 = [group[1].id, group[2].id];
+      // Round 1 (or right after the final's fresh regroup) — no prior
+      // partnerships to break yet, so fall back to balancing by rating.
+      const key = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
+      if(key === lastPairKey[court]){
+        t1 = [group[0].id, group[2].id];
+        t2 = [group[1].id, group[3].id];
+      } else if(Math.random() < 0.3){
+        t1 = [group[0].id, group[1].id];
+        t2 = [group[2].id, group[3].id];
+      } else {
+        t1 = [group[0].id, group[3].id];
+        t2 = [group[1].id, group[2].id];
+      }
     }
+
     pairing[court] = {t1, t2};
     lastPairKey[court] = group.map(p=>p.id).sort((a,b)=>a-b).join('-');
 
@@ -1741,7 +1766,7 @@ async function submitRound(){
 
   // Snapshot everything as it was right before this submission, in case it needs undoing.
   undoSnapshot = JSON.parse(JSON.stringify({
-    players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished
+    players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, incomingPairs
   }));
 
   applyResult('A', sA1, sA2);
@@ -1770,8 +1795,20 @@ async function submitRound(){
   const myCourtBefore = myPlayerId ? P(myPlayerId).court : null;
 
   if(!isFinal){
-    moveLadder(sA1>sA2 ? pairing.A.t2 : pairing.A.t1,
-               sB1>sB2 ? pairing.B.t1 : pairing.B.t2);
+    const aWinnerPair = sA1>sA2 ? pairing.A.t1 : pairing.A.t2;
+    const aLoserPair  = sA1>sA2 ? pairing.A.t2 : pairing.A.t1;
+    const bWinnerPair = sB1>sB2 ? pairing.B.t1 : pairing.B.t2;
+    const bLoserPair  = sB1>sB2 ? pairing.B.t2 : pairing.B.t1;
+
+    moveLadder(aLoserPair, bWinnerPair);
+
+    // Next round: Sunshine gets both winning pairs, Breeze gets both losing
+    // pairs — generatePairing will break both pairs apart so nobody keeps
+    // their partner into the next game.
+    incomingPairs = {
+      A: [aWinnerPair, bWinnerPair],
+      B: [bLoserPair, aLoserPair]
+    };
   }
 
   roundNum++;
@@ -1790,7 +1827,7 @@ async function undoLastSubmit(){
   if(!undoSnapshot) return;
   const ok = confirm('Undo the last submitted score? This puts the game back to right before that submission.');
   if(!ok) return;
-  ({ players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished } = undoSnapshot);
+  ({ players, roundNum, totalRounds, pairing, lastPairKey, history, isFinal, finished, incomingPairs } = undoSnapshot);
   undoSnapshot = null;
   document.getElementById('commentaryBanner').classList.add('hidden');
   render();
