@@ -612,34 +612,17 @@
         <button type="button" class="btn-ghost" style="padding:8px 12px;font-size:13px;" onclick="addGuest()">Add</button>
       </div>
 
+      <div class="name-tag" style="margin-top:10px;">
+        <div class="avatar" style="background:#FFD700;">💰</div>
+        <input id="courtPayer" placeholder="Who booked the court? (optional)" maxlength="24" list="rosterNames" autocomplete="off">
+      </div>
+      <datalist id="rosterNames"></datalist>
+
       <div id="lineupPreview" class="lineup-preview hidden">
         <h4>🎯 Game 1 lineup</h4>
         <p class="hint" style="font-size:12.5px;margin:2px 0 14px;">Everyone starts even, so this first matchup is yours to set. Tap two names to swap them. From game 2 on, the ladder takes over automatically.</p>
         <div id="lineupCourts"></div>
         <button type="button" class="btn-ghost lineup-shuffle-all" onclick="shuffleLineup()">🔀 Shuffle everyone</button>
-      </div>
-
-      <div class="cost-card">
-        <h4>💰 Court booking</h4>
-        <datalist id="rosterNames"></datalist>
-        <p class="hint" style="font-size:12.5px;margin:2px 0 12px;">Optional — figure out who owes what for today's court time.</p>
-        <div class="cost-grid">
-          <label>Rate per spot ($)
-            <input type="number" id="courtRate" value="15" min="0" step="0.5" oninput="updateCostSummary()">
-          </label>
-          <label>Courts booked
-            <input type="number" id="courtsBooked" value="2" min="1" max="6" oninput="updateCostSummary()">
-          </label>
-          <label>Who paid?
-            <input type="text" id="courtPayer" placeholder="e.g. Aarti" list="rosterNames" oninput="updateCostSummary()">
-          </label>
-          <label># players splitting
-            <input type="number" id="splitCount" value="8" min="1" max="20" oninput="updateCostSummary()">
-          </label>
-        </div>
-        <p class="hint" style="font-size:11.5px;margin:8px 0 0;">Usually matches your player count — bump it up if extra people rotated in (like a 9th player sharing the 2 courts).</p>
-        <div class="cost-summary" id="costSummary"></div>
-        <button type="button" class="btn-ghost" style="width:100%;margin-top:10px;padding:11px;" onclick="shareCostCard()">📸 Share cost split card</button>
       </div>
 
       <div class="row-opts">
@@ -723,6 +706,29 @@
     <div class="board-list" id="finalStandings" style="text-align:left;margin:20px 0;"></div>
     <button class="btn-big" onclick="shareRecapCard()">📸 Share recap card</button>
     <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="shareCommentaryCard()">🎙️ Share commentary card</button>
+
+    <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="toggleCostPanel()" id="viewCostBtn">💰 View cost split</button>
+    <div class="cost-card hidden" id="costPanel" style="text-align:left;">
+      <h4>💰 Court booking</h4>
+      <p class="hint" style="font-size:12.5px;margin:2px 0 12px;">Check these before sharing — adjust anything that's off.</p>
+      <div class="cost-grid">
+        <label>Rate per spot ($)
+          <input type="number" id="courtRate" value="15" min="0" step="0.5" oninput="updateCostSummary()">
+        </label>
+        <label>Courts booked
+          <input type="number" id="courtsBooked" value="2" min="1" max="6" oninput="updateCostSummary()">
+        </label>
+        <label>Who paid?
+          <input type="text" id="courtPayerFinal" placeholder="e.g. Aarti" list="rosterNames" oninput="updateCostSummary()">
+        </label>
+        <label># players splitting
+          <input type="number" id="splitCount" value="8" min="1" max="20" oninput="updateCostSummary()">
+        </label>
+      </div>
+      <div class="cost-summary" id="costSummary"></div>
+      <button type="button" class="btn-big" style="margin-top:10px;" onclick="shareCostCard()">📸 Share cost split card</button>
+    </div>
+
     <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="location.reload()">Start a new party</button>
   </div>
 
@@ -2108,13 +2114,27 @@ function generateRecapCanvas(){
 // A standalone calculator, independent of the game itself, since real-world
 // headcount (e.g. a 9th player rotating through 2 courts) doesn't always
 // match the app's fixed 8-player game engine.
+function toggleCostPanel(){
+  const panel = document.getElementById('costPanel');
+  const isHidden = panel.classList.contains('hidden');
+  if(isHidden){
+    // Pre-fill from whatever was set during player selection, and default the
+    // split count to the actual party size (adjustable for a 9-player rotation).
+    const setupPayer = document.getElementById('courtPayer');
+    if(setupPayer) document.getElementById('courtPayerFinal').value = setupPayer.value;
+    document.getElementById('splitCount').value = players.length || 8;
+    updateCostSummary();
+  }
+  panel.classList.toggle('hidden');
+}
+
 function updateCostSummary(){
   const rate = parseFloat(document.getElementById('courtRate').value) || 0;
   const courts = parseInt(document.getElementById('courtsBooked').value) || 0;
   const splitCount = Math.max(1, parseInt(document.getElementById('splitCount').value) || 1);
   const total = rate * 4 * courts;
   const perPerson = total / splitCount;
-  const payer = document.getElementById('courtPayer').value.trim();
+  const payer = document.getElementById('courtPayerFinal').value.trim();
   const el = document.getElementById('costSummary');
   el.innerHTML = `Total: <b>$${total.toFixed(2)}</b> for ${courts} court${courts===1?'':'s'} &middot; Each of ${splitCount} pays <b>$${perPerson.toFixed(2)}</b>${payer ? ` to ${escapeHtml(payer)}` : ''}`;
 }
@@ -2125,11 +2145,11 @@ function generateCostCanvas(){
   const splitCount = Math.max(1, parseInt(document.getElementById('splitCount').value) || 1);
   const total = rate * 4 * courts;
   const perPerson = total / splitCount;
-  const payer = document.getElementById('courtPayer').value.trim() || 'the court booker';
+  const payer = document.getElementById('courtPayerFinal').value.trim() || 'the court booker';
 
   // If the actual selected roster matches the split count, list real names —
   // otherwise just state the per-person amount generically.
-  const namesToList = (selectedPlayers.length === splitCount) ? selectedPlayers.filter(n => n !== payer) : [];
+  const namesToList = (players.length === splitCount) ? players.map(p=>p.name).filter(n => n !== payer) : [];
 
   const width = 640;
   const margin = 40;
