@@ -856,6 +856,7 @@ const DEFAULT_PLAYERS = [
 ];
 let selectedPlayers = [];   // names tapped, in tap order — becomes the roster for this party
 let courtBookedBy = '';     // who paid for the court, picked with one tap rather than typed
+let pendingCostCanvas = null; // the generated cost card image, waiting for confirm-to-share
 let guestPlayers = [];      // extra names added just for this session, shown as chips too
 
 function getKnownPlayers(){
@@ -2313,8 +2314,6 @@ function generateCostCanvas(){
 
   return canvas;
 }
-
-let pendingCostCanvas = null;
 
 function previewCostCard(){
   pendingCostCanvas = generateCostCanvas();
