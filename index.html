@@ -317,6 +317,10 @@
   .final-banner .trophy{font-size:30px;}
   .final-banner h3{font-size:20px;color:var(--coral);text-shadow:0 0 10px rgba(255,93,58,0.3);}
   .final-banner p{margin:2px 0 0;color:var(--ink-dim);font-weight:500;font-size:13px;}
+  .extend-btn{width:100%;margin-top:2px;padding:11px;font-size:13px;background:var(--card);}
+
+  .game-length-row{display:flex;justify-content:center;margin-bottom:16px;}
+  .game-length-row button{padding:9px 16px;font-size:12.5px;color:var(--ink-dim);}
 
   /* ---------- COMMENTARY BANNER ---------- */
   .commentary-banner{
@@ -643,6 +647,11 @@
           <p>Sunshine Court hosts one last fun game today — however things have gone, let's finish strong together!</p>
         </div>
       </div>
+      <button type="button" class="btn-ghost extend-btn" onclick="extendOneMoreGame()">➕ Actually, let's play one more after this</button>
+    </div>
+
+    <div class="game-length-row">
+      <button type="button" class="btn-ghost" id="callFinalBtn" onclick="callFinalNow()">🏁 Call this the final game</button>
     </div>
 
     <div id="commentaryBanner" class="commentary-banner hidden"></div>
@@ -1329,6 +1338,26 @@ function goHome(){
 // ---------- PAIRING LOGIC ----------
 let incomingPairs = { A: null, B: null }; // the two pairs arriving at each court this round, so we can break both of them up
 
+// Court time is fixed in real life, not the game plan — these let the
+// "final game" designation move to match reality instead of a preset number.
+async function callFinalNow(){
+  const ok = confirm(`Make Game ${roundNum} the final game? Everyone's top players will be gathered for one last game together, and the party will wrap up after this one.`);
+  if(!ok) return;
+  totalRounds = roundNum;
+  generatePairing();
+  render();
+  await saveState();
+}
+
+async function extendOneMoreGame(){
+  const ok = confirm(`Play at least one more game? Game ${roundNum} will no longer be the final — Game ${totalRounds + 1} will be instead.`);
+  if(!ok) return;
+  totalRounds = totalRounds + 1;
+  generatePairing();
+  render();
+  await saveState();
+}
+
 function generatePairing(){
   isFinal = (roundNum === totalRounds);
 
@@ -1497,6 +1526,7 @@ function render(){
   document.getElementById('gamePill').textContent =
     isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
   document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
+  document.getElementById('callFinalBtn').closest('.game-length-row').classList.toggle('hidden', isFinal);
   document.getElementById('undoBtn').style.display = undoSnapshot ? 'inline-flex' : 'none';
 
   // A stable, non-competitive order — never sorted by performance, so there's
