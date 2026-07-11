@@ -169,6 +169,12 @@
     background:rgba(57,255,106,0.16);border-color:var(--pickle);color:var(--ink);
     box-shadow:0 0 0 1px rgba(57,255,106,0.25);
   }
+  .booker-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .booker-chip{padding:8px 14px;font-size:13px;}
+  .booker-chip.selected{
+    background:rgba(255,215,0,0.18);border-color:#FFD700;color:#fff;
+    box-shadow:0 0 0 1px rgba(255,215,0,0.3);
+  }
   .guest-toggle-btn{width:100%;padding:11px;font-size:13px;margin-bottom:6px;}
 
   .chip-summary{
@@ -612,11 +618,10 @@
         <button type="button" class="btn-ghost" style="padding:8px 12px;font-size:13px;" onclick="addGuest()">Add</button>
       </div>
 
-      <div class="name-tag" style="margin-top:10px;">
-        <div class="avatar" style="background:#FFD700;">💰</div>
-        <input id="courtPayer" placeholder="Who booked the court? (optional)" maxlength="24" list="rosterNames" autocomplete="off">
+      <div class="booker-picker">
+        <p class="hint" style="margin:10px 0 8px;font-size:12.5px;">💰 Who booked the court? (optional)</p>
+        <div class="booker-chips" id="bookerChips"></div>
       </div>
-      <datalist id="rosterNames"></datalist>
 
       <div id="lineupPreview" class="lineup-preview hidden">
         <h4>🎯 Game 1 lineup</h4>
@@ -718,13 +723,12 @@
         <label>Courts booked
           <input type="number" id="courtsBooked" value="2" min="1" max="6" oninput="updateCostSummary()">
         </label>
-        <label>Who paid?
-          <input type="text" id="courtPayerFinal" placeholder="e.g. Aarti" list="rosterNames" oninput="updateCostSummary()">
-        </label>
         <label># players splitting
           <input type="number" id="splitCount" value="8" min="1" max="20" oninput="updateCostSummary()">
         </label>
       </div>
+      <p class="hint" style="margin:10px 0 6px;font-size:12.5px;">💰 Who paid?</p>
+      <div class="booker-chips" id="bookerChipsFinal"></div>
       <div class="cost-summary" id="costSummary"></div>
       <button type="button" class="btn-big" style="margin-top:10px;" onclick="shareCostCard()">📸 Share cost split card</button>
     </div>
@@ -840,6 +844,7 @@ const DEFAULT_PLAYERS = [
   'Payal','Puja','Rupa','Sangita','Sonal B','Sonal M','Suruchi','Tripti'
 ];
 let selectedPlayers = [];   // names tapped, in tap order — becomes the roster for this party
+let courtBookedBy = '';     // who paid for the court, picked with one tap rather than typed
 let guestPlayers = [];      // extra names added just for this session, shown as chips too
 
 function getKnownPlayers(){
@@ -875,8 +880,7 @@ function renderChipGrid(){
   }).join('');
   document.getElementById('playerCounter').textContent = `${selectedPlayers.length} / 8 selected`;
 
-  const rosterList = document.getElementById('rosterNames');
-  if(rosterList) rosterList.innerHTML = allNames.map(n=>`<option value="${escapeHtmlAttr(n)}">`).join('');
+  renderBookerChips();
 
   // Below 8, always show the full picker. The moment you hit exactly 8, it
   // auto-collapses into a summary so the lineup and Start button aren't
@@ -989,6 +993,33 @@ function shuffleLineup(court){
   renderLineupCourts();
 }
 
+
+// One tap to mark who booked the court — reuses whichever roster is relevant
+// (the players picked so far during setup, or the final party roster once
+// the session is done), instead of typing a name.
+function renderBookerChips(){
+  const chipOf = (n) => `<button type="button" class="player-chip booker-chip ${courtBookedBy===n?'selected':''}" onclick="pickBooker('${escapeHtmlAttr(n).replace(/'/g,"\\'")}')">${escapeHtml(n)}</button>`;
+
+  const setupHolder = document.getElementById('bookerChips');
+  if(setupHolder){
+    setupHolder.innerHTML = selectedPlayers.length
+      ? selectedPlayers.map(chipOf).join('')
+      : '<span class="hint" style="font-size:12px;">Pick your players above first.</span>';
+  }
+
+  const finalHolder = document.getElementById('bookerChipsFinal');
+  if(finalHolder){
+    finalHolder.innerHTML = players.map(p=>chipOf(p.name)).join('');
+  }
+}
+
+function pickBooker(name){
+  courtBookedBy = (courtBookedBy === name) ? '' : name; // tap again to un-pick
+  renderBookerChips();
+  if(document.getElementById('costPanel') && !document.getElementById('costPanel').classList.contains('hidden')){
+    updateCostSummary();
+  }
+}
 
 function toggleChip(name){
   const idx = selectedPlayers.indexOf(name);
@@ -2118,11 +2149,9 @@ function toggleCostPanel(){
   const panel = document.getElementById('costPanel');
   const isHidden = panel.classList.contains('hidden');
   if(isHidden){
-    // Pre-fill from whatever was set during player selection, and default the
-    // split count to the actual party size (adjustable for a 9-player rotation).
-    const setupPayer = document.getElementById('courtPayer');
-    if(setupPayer) document.getElementById('courtPayerFinal').value = setupPayer.value;
+    // Default the split count to the actual party size (adjustable for a 9-player rotation).
     document.getElementById('splitCount').value = players.length || 8;
+    renderBookerChips();
     updateCostSummary();
   }
   panel.classList.toggle('hidden');
@@ -2134,9 +2163,8 @@ function updateCostSummary(){
   const splitCount = Math.max(1, parseInt(document.getElementById('splitCount').value) || 1);
   const total = rate * 4 * courts;
   const perPerson = total / splitCount;
-  const payer = document.getElementById('courtPayerFinal').value.trim();
   const el = document.getElementById('costSummary');
-  el.innerHTML = `Total: <b>$${total.toFixed(2)}</b> for ${courts} court${courts===1?'':'s'} &middot; Each of ${splitCount} pays <b>$${perPerson.toFixed(2)}</b>${payer ? ` to ${escapeHtml(payer)}` : ''}`;
+  el.innerHTML = `Total: <b>$${total.toFixed(2)}</b> for ${courts} court${courts===1?'':'s'} &middot; Each of ${splitCount} pays <b>$${perPerson.toFixed(2)}</b>${courtBookedBy ? ` to ${escapeHtml(courtBookedBy)}` : ''}`;
 }
 
 function generateCostCanvas(){
@@ -2145,7 +2173,7 @@ function generateCostCanvas(){
   const splitCount = Math.max(1, parseInt(document.getElementById('splitCount').value) || 1);
   const total = rate * 4 * courts;
   const perPerson = total / splitCount;
-  const payer = document.getElementById('courtPayerFinal').value.trim() || 'the court booker';
+  const payer = courtBookedBy || 'the court booker';
 
   // If the actual selected roster matches the split count, list real names —
   // otherwise just state the per-person amount generically.
