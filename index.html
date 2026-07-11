@@ -180,6 +180,20 @@
   .chip-summary button{padding:7px 14px;font-size:12.5px;}
 
   .lineup-preview{margin:16px 0;padding:14px;background:var(--cream-2);border:1px solid rgba(234,246,255,0.1);border-radius:14px;}
+
+  .cost-card{margin:16px 0;padding:14px;background:var(--cream-2);border:1px solid rgba(255,46,154,0.25);border-radius:14px;}
+  .cost-card h4{font-size:16px;color:var(--sun);margin-bottom:4px;}
+  .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .cost-grid label{font-size:11.5px;font-weight:700;color:var(--ink-dim);display:flex;flex-direction:column;gap:4px;}
+  .cost-grid input{
+    background:var(--card);border:1px solid rgba(234,246,255,0.14);color:var(--ink);
+    padding:8px 9px;border-radius:8px;font-family:'Space Mono',monospace;font-weight:700;font-size:14px;
+  }
+  .cost-summary{
+    margin-top:12px;padding:10px 12px;background:rgba(57,255,106,0.08);border:1px solid rgba(57,255,106,0.25);
+    border-radius:10px;font-size:13px;color:var(--ink);font-weight:600;
+  }
+  .cost-summary b{color:var(--pickle);}
   .lineup-preview h4{font-size:16px;color:var(--sun);margin-bottom:4px;}
   .lineup-court{margin-bottom:14px;}
   .lineup-court:last-child{margin-bottom:0;}
@@ -604,6 +618,30 @@
         <div id="lineupCourts"></div>
         <button type="button" class="btn-ghost lineup-shuffle-all" onclick="shuffleLineup()">🔀 Shuffle everyone</button>
       </div>
+
+      <div class="cost-card">
+        <h4>💰 Court booking</h4>
+        <datalist id="rosterNames"></datalist>
+        <p class="hint" style="font-size:12.5px;margin:2px 0 12px;">Optional — figure out who owes what for today's court time.</p>
+        <div class="cost-grid">
+          <label>Rate per spot ($)
+            <input type="number" id="courtRate" value="15" min="0" step="0.5" oninput="updateCostSummary()">
+          </label>
+          <label>Courts booked
+            <input type="number" id="courtsBooked" value="2" min="1" max="6" oninput="updateCostSummary()">
+          </label>
+          <label>Who paid?
+            <input type="text" id="courtPayer" placeholder="e.g. Aarti" list="rosterNames" oninput="updateCostSummary()">
+          </label>
+          <label># players splitting
+            <input type="number" id="splitCount" value="8" min="1" max="20" oninput="updateCostSummary()">
+          </label>
+        </div>
+        <p class="hint" style="font-size:11.5px;margin:8px 0 0;">Usually matches your player count — bump it up if extra people rotated in (like a 9th player sharing the 2 courts).</p>
+        <div class="cost-summary" id="costSummary"></div>
+        <button type="button" class="btn-ghost" style="width:100%;margin-top:10px;padding:11px;" onclick="shareCostCard()">📸 Share cost split card</button>
+      </div>
+
       <div class="row-opts">
         <label>Number of games:</label>
         <input type="number" id="totalRounds" value="8" min="3" max="20">
@@ -831,6 +869,9 @@ function renderChipGrid(){
   }).join('');
   document.getElementById('playerCounter').textContent = `${selectedPlayers.length} / 8 selected`;
 
+  const rosterList = document.getElementById('rosterNames');
+  if(rosterList) rosterList.innerHTML = allNames.map(n=>`<option value="${escapeHtmlAttr(n)}">`).join('');
+
   // Below 8, always show the full picker. The moment you hit exactly 8, it
   // auto-collapses into a summary so the lineup and Start button aren't
   // buried under a grid that's already done its job — the main scroll fix.
@@ -980,6 +1021,7 @@ function addGuest(){
 
 renderChipGrid();
 document.getElementById('partyCode').value = randomCode();
+updateCostSummary();
 
 // ---------- SHARED STORAGE (Netlify Function + Blobs) ----------
 const API_BASE = '/.netlify/functions/party';
@@ -2060,6 +2102,139 @@ function generateRecapCanvas(){
   ctx.fillText('🏓 See you next time!', width/2, height-24);
 
   return canvas;
+}
+
+// ---------- COURT COST SPLIT ----------
+// A standalone calculator, independent of the game itself, since real-world
+// headcount (e.g. a 9th player rotating through 2 courts) doesn't always
+// match the app's fixed 8-player game engine.
+function updateCostSummary(){
+  const rate = parseFloat(document.getElementById('courtRate').value) || 0;
+  const courts = parseInt(document.getElementById('courtsBooked').value) || 0;
+  const splitCount = Math.max(1, parseInt(document.getElementById('splitCount').value) || 1);
+  const total = rate * 4 * courts;
+  const perPerson = total / splitCount;
+  const payer = document.getElementById('courtPayer').value.trim();
+  const el = document.getElementById('costSummary');
+  el.innerHTML = `Total: <b>$${total.toFixed(2)}</b> for ${courts} court${courts===1?'':'s'} &middot; Each of ${splitCount} pays <b>$${perPerson.toFixed(2)}</b>${payer ? ` to ${escapeHtml(payer)}` : ''}`;
+}
+
+function generateCostCanvas(){
+  const rate = parseFloat(document.getElementById('courtRate').value) || 0;
+  const courts = parseInt(document.getElementById('courtsBooked').value) || 0;
+  const splitCount = Math.max(1, parseInt(document.getElementById('splitCount').value) || 1);
+  const total = rate * 4 * courts;
+  const perPerson = total / splitCount;
+  const payer = document.getElementById('courtPayer').value.trim() || 'the court booker';
+
+  // If the actual selected roster matches the split count, list real names —
+  // otherwise just state the per-person amount generically.
+  const namesToList = (selectedPlayers.length === splitCount) ? selectedPlayers.filter(n => n !== payer) : [];
+
+  const width = 640;
+  const margin = 40;
+  const FONT = 'Manrope, Arial, sans-serif';
+  const rowH = 44;
+  const headerH = 190;
+  const footerH = 50;
+  const height = headerH + (namesToList.length ? namesToList.length*rowH + 20 : 60) + footerH;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0,0,0,height);
+  bg.addColorStop(0, '#161a24');
+  bg.addColorStop(1, '#0b0e14');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,width,height);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#39FF6A';
+  ctx.font = `800 30px ${FONT}`;
+  ctx.fillText('🥒 COURT COSTS', width/2, 46);
+
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 14px ${FONT}`;
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+  ctx.fillText(dateLabel, width/2, 70);
+
+  ctx.fillStyle = '#FF2E9A';
+  ctx.font = `700 16px ${FONT}`;
+  ctx.fillText(`💰 ${payer} covered ${courts} court${courts===1?'':'s'} today`, width/2, 104);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 26px ${FONT}`;
+  ctx.fillText(`$${total.toFixed(2)} total`, width/2, 138);
+
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 14px ${FONT}`;
+  ctx.fillText(`$${rate.toFixed(2)}/spot  •  split ${splitCount} ways`, width/2, 160);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.moveTo(margin, headerH-16);
+  ctx.lineTo(width-margin, headerH-16);
+  ctx.stroke();
+
+  let y = headerH + 14;
+  if(namesToList.length){
+    namesToList.forEach((name,i)=>{
+      const rowY = y + i*rowH;
+      if(i % 2 === 0){
+        ctx.fillStyle = 'rgba(255,255,255,0.035)';
+        ctx.fillRect(margin-20, rowY-24, width-(margin-20)*2, rowH);
+      }
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 17px ${FONT}`;
+      ctx.fillText(name, margin, rowY);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#39FF6A';
+      ctx.font = `800 17px ${FONT}`;
+      ctx.fillText(`$${perPerson.toFixed(2)}`, width-margin, rowY);
+    });
+  } else {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#39FF6A';
+    ctx.font = `800 22px ${FONT}`;
+    ctx.fillText(`Everyone pays $${perPerson.toFixed(2)}`, width/2, y+14);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8fa0ae';
+  ctx.font = `600 12.5px ${FONT}`;
+  ctx.fillText('🏓 Thanks for covering the court!', width/2, height-20);
+
+  return canvas;
+}
+
+function shareCostCard(){
+  const canvas = generateCostCanvas();
+  canvas.toBlob(async (blob)=>{
+    if(!blob) return;
+    const file = new File([blob], 'pickle-party-costs.png', { type: 'image/png' });
+
+    if(navigator.canShare && navigator.canShare({ files: [file] })){
+      try{
+        await navigator.share({ files: [file], title: 'Pickle Party Court Costs' });
+        return;
+      }catch(err){
+        // user cancelled the share sheet, or it failed — fall through to download instead
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pickle-party-costs.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    alert('Saved! Find "pickle-party-costs.png" in your downloads to share it.');
+  }, 'image/png');
 }
 
 function wrapCanvasText(ctx, text, maxWidth){
