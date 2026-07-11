@@ -1217,38 +1217,43 @@ async function manualSync(){
 }
 
 async function startNewParty(){
-  const codeInput = document.getElementById('partyCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'') || randomCode();
-  partyCode = codeInput;
+  try{
+    const codeInput = document.getElementById('partyCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'') || randomCode();
+    partyCode = codeInput;
 
-  const existing = await loadRemoteState();
-  if(existing){
-    const takeOver = confirm(`A party already exists with code ${partyCode}. Tap OK to join it instead (your entered names will be ignored), or Cancel to pick a different code.`);
-    if(!takeOver) return;
-    applyRemoteState(existing);
-    lastSavedAt = existing.savedAt || Date.now();
-  } else {
-    if(storageOk === false){
-      const proceed = confirm("⚠️ Live sync isn't reachable from this device right now, so this party will stay local-only (other phones won't see updates). Start anyway?");
-      if(!proceed) return;
+    const existing = await loadRemoteState();
+    if(existing){
+      const takeOver = confirm(`A party already exists with code ${partyCode}. Tap OK to join it instead (your entered names will be ignored), or Cancel to pick a different code.`);
+      if(!takeOver) return;
+      applyRemoteState(existing);
+      lastSavedAt = existing.savedAt || Date.now();
+    } else {
+      if(selectedPlayers.length !== 8){
+        alert(`Pick exactly 8 players first — you've got ${selectedPlayers.length} selected.`);
+        return;
+      }
+      // Note: if live sync isn't reachable, we no longer block on a confirm()
+      // dialog here — some mobile browsers silently suppress repeated popups,
+      // which made "Start" appear to do nothing at all. We just start locally
+      // instead; the sync badge already shows the connection status.
+      const names = lineupOrder.length === 8 ? [...lineupOrder] : [...selectedPlayers];
+      totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
+      players = names.map((n,i)=>({
+        id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
+        wins:0, losses:0, games:0, lastDelta:0, serveFirstCount:0
+      }));
+      incomingPairs = { A: null, B: null };
+      generatePairing();
+      rememberPlayerNames(names);
+      partyStartedAt = Date.now();
+      courtNumbers = { A:'', B:'' };
     }
-    if(selectedPlayers.length !== 8){
-      alert(`Pick exactly 8 players first — you've got ${selectedPlayers.length} selected.`);
-      return;
-    }
-    const names = lineupOrder.length === 8 ? [...lineupOrder] : [...selectedPlayers];
-    totalRounds = Math.max(3, Math.min(20, parseInt(document.getElementById('totalRounds').value)||8));
-    players = names.map((n,i)=>({
-      id:i, name:n, color:AVATAR_COLORS[i], rating:0, court: i<4 ? 'A':'B',
-      wins:0, losses:0, games:0, lastDelta:0, serveFirstCount:0
-    }));
-    incomingPairs = { A: null, B: null };
-    generatePairing();
-    rememberPlayerNames(names);
-    partyStartedAt = Date.now();
-    courtNumbers = { A:'', B:'' };
+
+    await enterMainScreen();
+  }catch(err){
+    console.error('startNewParty failed:', err);
+    alert("Something went wrong starting the party:\n\n" + err.message + "\n\nYour player picks are still there — try tapping Start again.");
   }
-
-  await enterMainScreen();
 }
 
 async function joinExistingParty(){
