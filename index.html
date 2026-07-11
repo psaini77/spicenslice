@@ -200,6 +200,9 @@
     border-radius:10px;font-size:13px;color:var(--ink);font-weight:600;
   }
   .cost-summary b{color:var(--pickle);}
+  .cost-preview{margin-top:14px;}
+  .cost-preview img{width:100%;border-radius:14px;display:block;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .cost-preview-actions{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
   .lineup-preview h4{font-size:16px;color:var(--sun);margin-bottom:4px;}
   .lineup-court{margin-bottom:14px;}
   .lineup-court:last-child{margin-bottom:0;}
@@ -730,7 +733,15 @@
       <p class="hint" style="margin:10px 0 6px;font-size:12.5px;">💰 Who paid?</p>
       <div class="booker-chips" id="bookerChipsFinal"></div>
       <div class="cost-summary" id="costSummary"></div>
-      <button type="button" class="btn-big" style="margin-top:10px;" onclick="shareCostCard()">📸 Share cost split card</button>
+      <button type="button" class="btn-big" style="margin-top:10px;" onclick="previewCostCard()">👀 Preview cost card</button>
+
+      <div class="cost-preview hidden" id="costPreviewWrap">
+        <img id="costPreviewImg" alt="Cost split card preview">
+        <div class="cost-preview-actions">
+          <button type="button" class="btn-big" onclick="confirmShareCostCard()">📸 Looks good — share it</button>
+          <button type="button" class="btn-ghost" onclick="hideCostPreview()">✕ Cancel</button>
+        </div>
+      </div>
     </div>
 
     <button class="btn-ghost" style="width:100%;margin-top:10px;padding:13px;" onclick="location.reload()">Start a new party</button>
@@ -2154,6 +2165,7 @@ function toggleCostPanel(){
     renderBookerChips();
     updateCostSummary();
   }
+  hideCostPreview();
   panel.classList.toggle('hidden');
 }
 
@@ -2165,6 +2177,17 @@ function updateCostSummary(){
   const perPerson = total / splitCount;
   const el = document.getElementById('costSummary');
   el.innerHTML = `Total: <b>$${total.toFixed(2)}</b> for ${courts} court${courts===1?'':'s'} &middot; Each of ${splitCount} pays <b>$${perPerson.toFixed(2)}</b>${courtBookedBy ? ` to ${escapeHtml(courtBookedBy)}` : ''}`;
+  hideCostPreview(); // anything changed — the old preview no longer reflects the numbers
+}
+
+function roundRectPath(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
 }
 
 function generateCostCanvas(){
@@ -2175,17 +2198,22 @@ function generateCostCanvas(){
   const perPerson = total / splitCount;
   const payer = courtBookedBy || 'the court booker';
 
-  // If the actual selected roster matches the split count, list real names —
-  // otherwise just state the per-person amount generically.
+  // If the actual final roster matches the split count, list real names —
+  // otherwise just a single fallback line.
   const namesToList = (players.length === splitCount) ? players.map(p=>p.name).filter(n => n !== payer) : [];
 
-  const width = 640;
-  const margin = 40;
+  const width = 620;
+  const margin = 36;
   const FONT = 'Manrope, Arial, sans-serif';
-  const rowH = 44;
-  const headerH = 190;
-  const footerH = 50;
-  const height = headerH + (namesToList.length ? namesToList.length*rowH + 20 : 60) + footerH;
+  const rowH = 42;
+
+  const headerH = 66;   // title + date
+  const heroH = 108;    // the big "$X per player" hero block
+  const summaryH = 40;  // one compact line: payer, total, courts, split
+  const listPad = 16;
+  const listH = namesToList.length ? namesToList.length*rowH + listPad : 50;
+  const footerH = 36;
+  const height = headerH + heroH + summaryH + listH + footerH;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -2198,75 +2226,113 @@ function generateCostCanvas(){
   ctx.fillStyle = bg;
   ctx.fillRect(0,0,width,height);
 
+  // header
   ctx.textAlign = 'center';
   ctx.fillStyle = '#39FF6A';
-  ctx.font = `800 30px ${FONT}`;
-  ctx.fillText('🥒 COURT COSTS', width/2, 46);
-
+  ctx.font = `800 24px ${FONT}`;
+  ctx.fillText('🥒 COURT COSTS', width/2, 32);
   ctx.fillStyle = '#8fa0ae';
-  ctx.font = `600 14px ${FONT}`;
+  ctx.font = `600 12.5px ${FONT}`;
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
-  ctx.fillText(dateLabel, width/2, 70);
+  ctx.fillText(dateLabel, width/2, 52);
+
+  // hero block — the number people actually care about, front and center
+  const heroTop = headerH;
+  ctx.fillStyle = 'rgba(255,46,154,0.08)';
+  roundRectPath(ctx, margin, heroTop, width-margin*2, heroH-10, 16);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,46,154,0.35)';
+  ctx.lineWidth = 1.5;
+  roundRectPath(ctx, margin, heroTop, width-margin*2, heroH-10, 16);
+  ctx.stroke();
 
   ctx.fillStyle = '#FF2E9A';
-  ctx.font = `700 16px ${FONT}`;
-  ctx.fillText(`💰 ${payer} covered ${courts} court${courts===1?'':'s'} today`, width/2, 104);
-
+  ctx.font = `800 42px ${FONT}`;
+  ctx.fillText(`$${perPerson.toFixed(2)}`, width/2, heroTop + 50);
   ctx.fillStyle = '#ffffff';
-  ctx.font = `800 26px ${FONT}`;
-  ctx.fillText(`$${total.toFixed(2)} total`, width/2, 138);
+  ctx.font = `700 13px ${FONT}`;
+  ctx.fillText('PER PLAYER', width/2, heroTop + 74);
 
+  // one compact summary line instead of several spread-out ones
+  const summaryY = headerH + heroH + 6;
   ctx.fillStyle = '#8fa0ae';
-  ctx.font = `600 14px ${FONT}`;
-  ctx.fillText(`$${rate.toFixed(2)}/spot  •  split ${splitCount} ways`, width/2, 160);
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText(`💰 Paid by ${payer}  •  $${total.toFixed(2)} total  •  ${courts} court${courts===1?'':'s'}  •  split ${splitCount} ways`, width/2, summaryY);
 
   ctx.strokeStyle = 'rgba(255,255,255,0.12)';
   ctx.beginPath();
-  ctx.moveTo(margin, headerH-16);
-  ctx.lineTo(width-margin, headerH-16);
+  ctx.moveTo(margin, summaryY+14);
+  ctx.lineTo(width-margin, summaryY+14);
   ctx.stroke();
 
-  let y = headerH + 14;
+  // list, or a single friendly fallback line
+  let y = summaryY + 14 + listPad;
   if(namesToList.length){
     namesToList.forEach((name,i)=>{
       const rowY = y + i*rowH;
       if(i % 2 === 0){
         ctx.fillStyle = 'rgba(255,255,255,0.035)';
-        ctx.fillRect(margin-20, rowY-24, width-(margin-20)*2, rowH);
+        ctx.fillRect(margin-16, rowY-24, width-(margin-16)*2, rowH);
       }
+      const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+      ctx.beginPath();
+      ctx.arc(margin, rowY-6, 13, 0, Math.PI*2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.fillStyle = '#0B0E14';
+      ctx.font = `800 11px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(initials(name), margin, rowY-2);
+
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff';
-      ctx.font = `700 17px ${FONT}`;
-      ctx.fillText(name, margin, rowY);
+      ctx.font = `700 15px ${FONT}`;
+      ctx.fillText(name, margin+22, rowY);
+
       ctx.textAlign = 'right';
       ctx.fillStyle = '#39FF6A';
-      ctx.font = `800 17px ${FONT}`;
+      ctx.font = `800 15px ${FONT}`;
       ctx.fillText(`$${perPerson.toFixed(2)}`, width-margin, rowY);
     });
   } else {
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#39FF6A';
-    ctx.font = `800 22px ${FONT}`;
-    ctx.fillText(`Everyone pays $${perPerson.toFixed(2)}`, width/2, y+14);
+    ctx.fillStyle = '#8fa0ae';
+    ctx.font = `600 14px ${FONT}`;
+    ctx.fillText(`Send $${perPerson.toFixed(2)} to ${payer} 💸`, width/2, y+8);
   }
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#8fa0ae';
-  ctx.font = `600 12.5px ${FONT}`;
-  ctx.fillText('🏓 Thanks for covering the court!', width/2, height-20);
+  ctx.font = `600 11.5px ${FONT}`;
+  ctx.fillText('🏓 Thanks for covering the court!', width/2, height-14);
 
   return canvas;
 }
 
-function shareCostCard(){
-  const canvas = generateCostCanvas();
-  canvas.toBlob(async (blob)=>{
+let pendingCostCanvas = null;
+
+function previewCostCard(){
+  pendingCostCanvas = generateCostCanvas();
+  document.getElementById('costPreviewImg').src = pendingCostCanvas.toDataURL('image/png');
+  document.getElementById('costPreviewWrap').classList.remove('hidden');
+  document.getElementById('costPreviewWrap').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function hideCostPreview(){
+  document.getElementById('costPreviewWrap').classList.add('hidden');
+  pendingCostCanvas = null;
+}
+
+function confirmShareCostCard(){
+  if(!pendingCostCanvas) return;
+  pendingCostCanvas.toBlob(async (blob)=>{
     if(!blob) return;
     const file = new File([blob], 'pickle-party-costs.png', { type: 'image/png' });
 
     if(navigator.canShare && navigator.canShare({ files: [file] })){
       try{
         await navigator.share({ files: [file], title: 'Pickle Party Court Costs' });
+        hideCostPreview();
         return;
       }catch(err){
         // user cancelled the share sheet, or it failed — fall through to download instead
@@ -2282,6 +2348,7 @@ function shareCostCard(){
     a.remove();
     URL.revokeObjectURL(url);
     alert('Saved! Find "pickle-party-costs.png" in your downloads to share it.');
+    hideCostPreview();
   }, 'image/png');
 }
 
