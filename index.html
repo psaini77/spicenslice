@@ -157,10 +157,9 @@
     text-align:center;font-family:'Space Mono',monospace;font-weight:700;font-size:15px;
     color:var(--pickle);margin:14px 0 10px;
   }
-  .chip-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px;}
-  @media(min-width:520px){.chip-grid{grid-template-columns:repeat(3,1fr);}}
+  .chip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px;}
   .player-chip{
-    padding:13px 8px;border-radius:12px;font-size:14.5px;font-weight:700;text-align:center;
+    padding:11px 5px;border-radius:11px;font-size:13px;font-weight:700;text-align:center;
     background:var(--cream-2);border:1.5px solid rgba(234,246,255,0.14);color:var(--ink-dim);
     -webkit-tap-highlight-color:transparent;transition:transform .1s ease;
   }
@@ -168,6 +167,17 @@
   .player-chip.selected{
     background:rgba(57,255,106,0.16);border-color:var(--pickle);color:var(--ink);
     box-shadow:0 0 0 1px rgba(57,255,106,0.25);
+  }
+  .chip-wrap{position:relative;}
+  .chip-wrap .player-chip{width:100%;}
+  .chip-booker-badge{
+    position:absolute;top:-7px;right:-7px;width:21px;height:21px;border-radius:50%;font-size:10.5px;padding:0;
+    background:var(--card);border:1.5px solid rgba(255,215,0,0.35);color:rgba(255,255,255,0.35);
+    display:flex;align-items:center;justify-content:center;z-index:2;-webkit-tap-highlight-color:transparent;
+  }
+  .chip-booker-badge.active{
+    background:linear-gradient(160deg,#FFD700,#e0b400);border-color:var(--card);color:#0B0E14;
+    box-shadow:0 2px 6px rgba(0,0,0,0.35);
   }
   .booker-chips{display:flex;flex-wrap:wrap;gap:8px;}
   .booker-chip{padding:8px 14px;font-size:13px;}
@@ -607,7 +617,7 @@
     <div id="newGameForm" class="hidden">
       <button class="btn-ghost back-to-vote-btn" onclick="showRoleChoice()">← Back</button>
       <h2>Add the players</h2>
-      <p class="hint">Tap 8 names — no typing needed.</p>
+      <p class="hint">Tap 8 names — no typing needed. Once someone's picked, tap the 💰 on their chip if they booked the court.</p>
       <div class="player-counter" id="playerCounter">0 / 8 selected</div>
       <div class="chip-grid" id="chipGrid"></div>
       <div class="chip-summary hidden" id="chipSummary">
@@ -619,11 +629,6 @@
         <div class="avatar" style="background:#4C6EDB;">➕</div>
         <input id="guestNameInput" placeholder="Type a guest's name, then tap Add" maxlength="24" autocomplete="off">
         <button type="button" class="btn-ghost" style="padding:8px 12px;font-size:13px;" onclick="addGuest()">Add</button>
-      </div>
-
-      <div class="booker-picker">
-        <p class="hint" style="margin:10px 0 8px;font-size:12.5px;">💰 Who booked the court? (optional)</p>
-        <div class="booker-chips" id="bookerChips"></div>
       </div>
 
       <div id="lineupPreview" class="lineup-preview hidden">
@@ -888,7 +893,15 @@ function renderChipGrid(){
   const allNames = [...getKnownPlayers(), ...guestPlayers];
   grid.innerHTML = allNames.map(n=>{
     const isSelected = selectedPlayers.includes(n);
-    return `<button type="button" class="player-chip ${isSelected?'selected':''}" onclick="toggleChip('${escapeHtmlAttr(n).replace(/'/g,"\\'")}')">${escapeHtml(n)}</button>`;
+    const isBooker = courtBookedBy === n;
+    const escaped = escapeHtmlAttr(n).replace(/'/g,"\\'");
+    const badge = isSelected
+      ? `<button type="button" class="chip-booker-badge ${isBooker?'active':''}" onclick="event.stopPropagation(); pickBooker('${escaped}')" title="Mark as who booked the court">💰</button>`
+      : '';
+    return `<div class="chip-wrap">
+      <button type="button" class="player-chip ${isSelected?'selected':''}" onclick="toggleChip('${escaped}')">${escapeHtml(n)}</button>
+      ${badge}
+    </div>`;
   }).join('');
   document.getElementById('playerCounter').textContent = `${selectedPlayers.length} / 8 selected`;
 
@@ -1012,13 +1025,6 @@ function shuffleLineup(court){
 function renderBookerChips(){
   const chipOf = (n) => `<button type="button" class="player-chip booker-chip ${courtBookedBy===n?'selected':''}" onclick="pickBooker('${escapeHtmlAttr(n).replace(/'/g,"\\'")}')">${escapeHtml(n)}</button>`;
 
-  const setupHolder = document.getElementById('bookerChips');
-  if(setupHolder){
-    setupHolder.innerHTML = selectedPlayers.length
-      ? selectedPlayers.map(chipOf).join('')
-      : '<span class="hint" style="font-size:12px;">Pick your players above first.</span>';
-  }
-
   const finalHolder = document.getElementById('bookerChipsFinal');
   if(finalHolder){
     finalHolder.innerHTML = players.map(p=>chipOf(p.name)).join('');
@@ -1027,7 +1033,7 @@ function renderBookerChips(){
 
 function pickBooker(name){
   courtBookedBy = (courtBookedBy === name) ? '' : name; // tap again to un-pick
-  renderBookerChips();
+  renderChipGrid(); // refreshes the 💰 badges on the player chips (also refreshes the Done-screen chips)
   if(document.getElementById('costPanel') && !document.getElementById('costPanel').classList.contains('hidden')){
     updateCostSummary();
   }
@@ -2208,7 +2214,7 @@ function generateCostCanvas(){
   // otherwise just a single fallback line.
   const namesToList = (players.length === splitCount) ? players.map(p=>p.name).filter(n => n !== payer) : [];
 
-  const width = 620;
+  const width = 480;
   const margin = 36;
   const FONT = 'Manrope, Arial, sans-serif';
   const rowH = 42;
@@ -2294,11 +2300,11 @@ function generateCostCanvas(){
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 15px ${FONT}`;
       ctx.fillText(name, margin+22, rowY);
+      const nameW = ctx.measureText(name).width;
 
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#39FF6A';
       ctx.font = `800 15px ${FONT}`;
-      ctx.fillText(`$${perPerson.toFixed(2)}`, width-margin, rowY);
+      ctx.fillStyle = '#39FF6A';
+      ctx.fillText(`$${perPerson.toFixed(2)}`, margin+22+nameW+14, rowY);
     });
   } else {
     ctx.textAlign = 'center';
