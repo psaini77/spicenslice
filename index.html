@@ -370,25 +370,6 @@
   .extend-btn{width:100%;margin-top:2px;padding:11px;font-size:13px;background:var(--card);}
 
   .game-length-row{display:flex;justify-content:center;margin-bottom:16px;}
-
-  .kpi-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;}
-  .kpi-chip{
-    display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid rgba(234,246,255,0.12);
-    border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:700;color:var(--ink-dim);
-    box-shadow:0 1px 2px rgba(0,0,0,0.2);
-  }
-  .kpi-chip b{color:var(--ink);font-weight:800;}
-  .kpi-chip .kpi-icon{font-size:14px;flex:none;}
-  .kpi-dots{display:flex;gap:3px;align-items:center;flex-wrap:wrap;max-width:140px;}
-  .kpi-dots span{width:7px;height:7px;border-radius:50%;background:rgba(234,246,255,0.15);flex:none;}
-  .kpi-dots span.filled{background:var(--pickle);box-shadow:0 0 5px rgba(57,255,106,0.6);}
-  .kpi-dots span.current{background:var(--sun);box-shadow:0 0 6px rgba(255,46,154,0.7);}
-  @media(max-width:480px){
-    .kpi-row{gap:6px;margin-bottom:14px;}
-    .kpi-chip{padding:7px 11px;font-size:11px;gap:5px;}
-    .kpi-chip .kpi-icon{font-size:12px;}
-    .kpi-dots span{width:6px;height:6px;}
-  }
   .game-length-row button{padding:9px 16px;font-size:12.5px;color:var(--ink-dim);}
 
   /* ---------- COMMENTARY BANNER ---------- */
@@ -619,6 +600,7 @@
     <div class="hero-right">
       <div id="gamePill" class="game-pill hidden"></div>
       <div id="syncBadge" class="sync-badge hidden"></div>
+      <button type="button" class="btn-ghost home-btn hidden" id="callFinalBtn" onclick="callFinalNow()">🏁<span class="btn-label"> Call final</span></button>
       <div class="more-menu-wrap">
         <button class="btn-ghost home-btn" onclick="toggleMoreMenu()" id="moreMenuBtn">⋯</button>
         <div class="more-menu hidden" id="moreMenu">
@@ -725,13 +707,7 @@
       <button type="button" class="btn-ghost extend-btn" onclick="extendOneMoreGame()">➕ Actually, let's play one more after this</button>
     </div>
 
-    <div class="game-length-row">
-      <button type="button" class="btn-ghost" id="callFinalBtn" onclick="callFinalNow()">🏁 Call this the final game</button>
-    </div>
-
     <div id="commentaryBanner" class="commentary-banner hidden"></div>
-
-    <div class="kpi-row" id="kpiRow"></div>
 
     <h3 class="courts-heading">🎾 On the courts</h3>
     <div class="courts" id="courtsWrap"></div>
@@ -1411,62 +1387,13 @@ async function enterMainScreen(){
 function startClock(){
   if(clockTimer) clearInterval(clockTimer);
   updateGamePillText();
-  updateKpiRow();
-  clockTimer = setInterval(()=>{ updateGamePillText(); updateKpiRow(); }, 15000);
+  clockTimer = setInterval(updateGamePillText, 15000);
 }
 
 function updateGamePillText(){
   const roundText = isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
   const mins = partyStartedAt ? Math.max(0, Math.round((Date.now() - partyStartedAt) / 60000)) : 0;
   document.getElementById('gamePill').textContent = `${roundText} · ⏱ ${mins}m`;
-}
-
-// Three session-level signals — pace, progress, and how the games have been
-// shaping up — deliberately never naming or ranking any individual player.
-function updateKpiRow(){
-  const el = document.getElementById('kpiRow');
-  if(!el) return;
-
-  // 1. Pace: elapsed time so far, projected forward at the current average
-  // pace to estimate how much longer the remaining planned games will take.
-  const gamesPlayed = history.length;
-  const elapsedMin = partyStartedAt ? Math.max(0, Math.round((Date.now()-partyStartedAt)/60000)) : 0;
-  const avgPace = gamesPlayed > 0 ? elapsedMin / gamesPlayed : null;
-  const remainingRounds = Math.max(0, totalRounds - roundNum + (finished ? 0 : 1));
-  const projectedRemaining = (avgPace !== null && remainingRounds > 0) ? Math.round(avgPace * remainingRounds) : null;
-  const paceText = gamesPlayed === 0
-    ? 'Just getting started'
-    : (projectedRemaining !== null ? `${elapsedMin}m elapsed &middot; ~${projectedRemaining}m to go` : `${elapsedMin}m elapsed`);
-
-  // 2. Progress: a simple dot for every planned game — filled for played,
-  // highlighted for the current one, empty for what's left.
-  const dotsHtml = Array.from({length: totalRounds}, (_,i)=>{
-    const gameIdx = i+1;
-    const cls = gameIdx < roundNum ? 'filled' : (gameIdx === roundNum ? 'current' : '');
-    return `<span class="${cls}"></span>`;
-  }).join('');
-
-  // 3. Competitiveness pulse: how close the games have been today, tallied
-  // using the same close/decisive logic the commentary engine already uses.
-  let close=0, solid=0, decisive=0;
-  history.forEach(h=>{
-    [Math.abs(h.aScore1-h.aScore2), Math.abs(h.bScore1-h.bScore2)].forEach(margin=>{
-      if(margin<=2) close++;
-      else if(margin>=8) decisive++;
-      else solid++;
-    });
-  });
-  const pulseParts = [];
-  if(close) pulseParts.push(`<b>${close}</b> close`);
-  if(solid) pulseParts.push(`<b>${solid}</b> solid`);
-  if(decisive) pulseParts.push(`<b>${decisive}</b> decisive`);
-  const pulseText = pulseParts.length ? pulseParts.join(' &middot; ') : 'No games yet';
-
-  el.innerHTML = `
-    <div class="kpi-chip"><span class="kpi-icon">⏱️</span> ${paceText}</div>
-    <div class="kpi-chip"><span class="kpi-icon">📊</span><div class="kpi-dots">${dotsHtml}</div><b>${Math.min(roundNum,totalRounds)}/${totalRounds}</b></div>
-    <div class="kpi-chip"><span class="kpi-icon">🔥</span> ${pulseText}</div>
-  `;
 }
 
 async function endPartyNow(){
@@ -1524,6 +1451,7 @@ function goHome(){
   document.getElementById('syncNowBtn').classList.add('hidden');
   document.getElementById('endPartyBtn').classList.add('hidden');
   document.getElementById('shareLinkBtn').classList.add('hidden');
+  document.getElementById('callFinalBtn').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
   // Home should get you back INTO the same party — that's the Join path now,
   // not the Start-a-new-game path, so route there directly with the code ready.
@@ -1729,9 +1657,8 @@ function editableName(id, extraClass){
 
 function render(){
   updateGamePillText();
-  updateKpiRow();
   document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
-  document.getElementById('callFinalBtn').closest('.game-length-row').classList.toggle('hidden', isFinal);
+  document.getElementById('callFinalBtn').classList.toggle('hidden', isFinal);
   document.getElementById('undoBtn').style.display = undoSnapshot ? 'inline-flex' : 'none';
 
   // A stable, non-competitive order — never sorted by performance, so there's
