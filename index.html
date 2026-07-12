@@ -60,13 +60,9 @@
     display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
     margin-bottom:22px;
   }
-  .hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .hero-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
   .home-btn{padding:8px 14px;font-size:13px;white-space:nowrap;}
   .sync-now-btn{padding:8px 11px;font-size:14px;line-height:1;}
-  .clock-badge{
-    font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--ink-dim);
-    background:var(--card);border:1px solid rgba(234,246,255,0.14);border-radius:999px;padding:8px 14px;white-space:nowrap;
-  }
   .hero .mascot{
     font-size:40px;display:inline-block;animation:float 3s ease-in-out infinite;
   }
@@ -86,6 +82,18 @@
     font-size:12px;font-weight:700;color:var(--ink-dim);display:flex;align-items:center;gap:6px;
   }
   .sync-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-dim);}
+
+  .more-menu-wrap{position:relative;flex:none;}
+  .more-menu{
+    position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid rgba(234,246,255,0.16);
+    border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,0.45);padding:6px;min-width:180px;z-index:50;
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .more-menu-item{
+    width:100%;text-align:left;padding:10px 12px;font-size:13.5px;font-weight:700;background:transparent;
+    border:none;border-radius:8px;color:var(--ink);white-space:nowrap;
+  }
+  .more-menu-item:active{background:rgba(255,255,255,0.07);}
   .sync-badge.live .dot{background:var(--pickle);box-shadow:0 0 6px rgba(57,255,106,0.8);animation:pulse 1.6s ease-in-out infinite;}
   .sync-badge.offline .dot{background:var(--coral);}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
@@ -170,14 +178,23 @@
   }
   .chip-wrap{position:relative;}
   .chip-wrap .player-chip{width:100%;}
-  .chip-booker-badge{
-    position:absolute;top:-7px;right:-7px;width:21px;height:21px;border-radius:50%;font-size:10.5px;padding:0;
-    background:var(--card);border:1.5px solid rgba(255,215,0,0.35);color:rgba(255,255,255,0.35);
-    display:flex;align-items:center;justify-content:center;z-index:2;-webkit-tap-highlight-color:transparent;
+  .player-chip.is-booked{
+    border-color:rgba(212,175,55,0.5);
+    box-shadow:0 0 0 1px rgba(212,175,55,0.2), 0 2px 10px rgba(212,175,55,0.12);
   }
+  .chip-booker-badge{
+    position:absolute;top:-8px;right:-8px;width:23px;height:23px;border-radius:50%;
+    font-size:12px;font-weight:800;font-family:'Space Mono',monospace;padding:0;line-height:1;
+    background:var(--card);border:1.5px solid rgba(234,246,255,0.16);color:rgba(255,255,255,0.32);
+    display:flex;align-items:center;justify-content:center;z-index:2;-webkit-tap-highlight-color:transparent;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .2s ease, box-shadow .2s ease;
+  }
+  .chip-booker-badge:active{transform:scale(0.85);}
   .chip-booker-badge.active{
-    background:linear-gradient(160deg,#FFD700,#e0b400);border-color:var(--card);color:#0B0E14;
-    box-shadow:0 2px 6px rgba(0,0,0,0.35);
+    background:linear-gradient(155deg,#FFE9A8,#D4AF37 60%,#A67C00);
+    border-color:var(--card);color:#3A2A00;
+    box-shadow:0 3px 10px rgba(212,175,55,0.55), 0 0 0 1px rgba(212,175,55,0.3);
+    transform:scale(1.1);
   }
   .booker-chips{display:flex;flex-wrap:wrap;gap:8px;}
   .booker-chip{padding:8px 14px;font-size:13px;}
@@ -353,6 +370,25 @@
   .extend-btn{width:100%;margin-top:2px;padding:11px;font-size:13px;background:var(--card);}
 
   .game-length-row{display:flex;justify-content:center;margin-bottom:16px;}
+
+  .kpi-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;}
+  .kpi-chip{
+    display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid rgba(234,246,255,0.12);
+    border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:700;color:var(--ink-dim);
+    box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  }
+  .kpi-chip b{color:var(--ink);font-weight:800;}
+  .kpi-chip .kpi-icon{font-size:14px;flex:none;}
+  .kpi-dots{display:flex;gap:3px;align-items:center;flex-wrap:wrap;max-width:140px;}
+  .kpi-dots span{width:7px;height:7px;border-radius:50%;background:rgba(234,246,255,0.15);flex:none;}
+  .kpi-dots span.filled{background:var(--pickle);box-shadow:0 0 5px rgba(57,255,106,0.6);}
+  .kpi-dots span.current{background:var(--sun);box-shadow:0 0 6px rgba(255,46,154,0.7);}
+  @media(max-width:480px){
+    .kpi-row{gap:6px;margin-bottom:14px;}
+    .kpi-chip{padding:7px 11px;font-size:11px;gap:5px;}
+    .kpi-chip .kpi-icon{font-size:12px;}
+    .kpi-dots span{width:6px;height:6px;}
+  }
   .game-length-row button{padding:9px 16px;font-size:12.5px;color:var(--ink-dim);}
 
   /* ---------- COMMENTARY BANNER ---------- */
@@ -532,18 +568,19 @@
     .hero-right{gap:6px;}
     .btn-label{display:none;}
     .home-btn{padding:9px 10px;font-size:15px;}
-    .clock-badge{padding:6px 9px;font-size:11px;}
-    .game-pill{padding:6px 12px;font-size:12px;}
+    .game-pill{padding:6px 11px;font-size:11px;}
     .sync-badge{font-size:11px;gap:4px;}
     .sync-badge .dot{width:6px;height:6px;}
     .sync-now-btn{padding:7px 9px;}
+    .more-menu{min-width:170px;}
+    .more-menu-item{font-size:13px;padding:9px 11px;}
     .name-grid{grid-template-columns:1fr;gap:8px;}
     .setup-card{padding:18px;border-radius:16px;}
     .setup-card h2{font-size:24px;}
     .row-opts{margin-bottom:16px;}
     .btn-big{padding:15px 20px;font-size:16px;}
     button{min-height:44px;}
-    .step-btn, .win-btn{min-height:0;}
+    .step-btn, .win-btn, .chip-booker-badge{min-height:0;}
     .board-row{gap:7px;padding:8px 10px;}
     .board-row .avatar{width:26px;height:26px;font-size:11px;}
     .board-row .info .pname{font-size:13px;}
@@ -580,14 +617,18 @@
       <div class="sub">8 players &middot; 2 courts &middot; nobody sits out</div>
     </div>
     <div class="hero-right">
-      <button class="btn-ghost home-btn" onclick="openGuide()" title="How scoring & pairing works">❓<span class="btn-label"> How this works</span></button>
-      <button id="homeBtn" class="btn-ghost home-btn hidden" onclick="goHome()" title="Back to first page">🏠<span class="btn-label"> Home</span></button>
-      <button id="shareLinkBtn" class="btn-ghost home-btn hidden" onclick="shareJoinLink()" title="Share a one-tap join link">📤<span class="btn-label"> Invite link</span></button>
-      <div id="clockBadge" class="clock-badge hidden"></div>
       <div id="gamePill" class="game-pill hidden"></div>
       <div id="syncBadge" class="sync-badge hidden"></div>
-      <button id="syncNowBtn" class="btn-ghost sync-now-btn hidden" onclick="manualSync()" title="Pull the latest scores now">🔄</button>
-      <button id="endPartyBtn" class="btn-ghost home-btn hidden" onclick="endPartyNow()" title="Finish now and show final standings">🏁<span class="btn-label"> End party</span></button>
+      <div class="more-menu-wrap">
+        <button class="btn-ghost home-btn" onclick="toggleMoreMenu()" id="moreMenuBtn">⋯</button>
+        <div class="more-menu hidden" id="moreMenu">
+          <button class="more-menu-item" onclick="openGuide(); toggleMoreMenu();">❓ How this works</button>
+          <button id="homeBtn" class="more-menu-item hidden" onclick="goHome(); toggleMoreMenu();">🏠 Home</button>
+          <button id="shareLinkBtn" class="more-menu-item hidden" onclick="shareJoinLink(); toggleMoreMenu();">📤 Invite link</button>
+          <button id="syncNowBtn" class="more-menu-item hidden" onclick="manualSync(); toggleMoreMenu();">🔄 Sync now</button>
+          <button id="endPartyBtn" class="more-menu-item hidden" onclick="endPartyNow(); toggleMoreMenu();">🏁 End party</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -617,7 +658,7 @@
     <div id="newGameForm" class="hidden">
       <button class="btn-ghost back-to-vote-btn" onclick="showRoleChoice()">← Back</button>
       <h2>Add the players</h2>
-      <p class="hint">Tap 8 names — no typing needed. Once someone's picked, tap the 💰 on their chip if they booked the court.</p>
+      <p class="hint">Tap 8 names — no typing needed. Once someone's picked, tap the gold <b>$</b> on their chip if they booked the court.</p>
       <div class="player-counter" id="playerCounter">0 / 8 selected</div>
       <div class="chip-grid" id="chipGrid"></div>
       <div class="chip-summary hidden" id="chipSummary">
@@ -689,6 +730,8 @@
     </div>
 
     <div id="commentaryBanner" class="commentary-banner hidden"></div>
+
+    <div class="kpi-row" id="kpiRow"></div>
 
     <h3 class="courts-heading">🎾 On the courts</h3>
     <div class="courts" id="courtsWrap"></div>
@@ -896,10 +939,13 @@ function renderChipGrid(){
     const isBooker = courtBookedBy === n;
     const escaped = escapeHtmlAttr(n).replace(/'/g,"\\'");
     const badge = isSelected
-      ? `<button type="button" class="chip-booker-badge ${isBooker?'active':''}" onclick="event.stopPropagation(); pickBooker('${escaped}')" title="Mark as who booked the court">💰</button>`
+      ? `<button type="button" class="chip-booker-badge ${isBooker?'active':''}" onclick="event.stopPropagation(); pickBooker('${escaped}')" title="Mark as who booked the court">$</button>`
       : '';
+    const chipClasses = ['player-chip'];
+    if(isSelected) chipClasses.push('selected');
+    if(isBooker) chipClasses.push('is-booked');
     return `<div class="chip-wrap">
-      <button type="button" class="player-chip ${isSelected?'selected':''}" onclick="toggleChip('${escaped}')">${escapeHtml(n)}</button>
+      <button type="button" class="${chipClasses.join(' ')}" onclick="toggleChip('${escaped}')">${escapeHtml(n)}</button>
       ${badge}
     </div>`;
   }).join('');
@@ -1349,7 +1395,6 @@ async function enterMainScreen(){
   document.getElementById('syncNowBtn').classList.remove('hidden');
   document.getElementById('endPartyBtn').classList.remove('hidden');
   document.getElementById('shareLinkBtn').classList.remove('hidden');
-  document.getElementById('clockBadge').classList.remove('hidden');
   document.getElementById('commentaryBanner').classList.add('hidden');
   startClock();
 
@@ -1365,15 +1410,63 @@ async function enterMainScreen(){
 
 function startClock(){
   if(clockTimer) clearInterval(clockTimer);
-  updateClock();
-  clockTimer = setInterval(updateClock, 15000);
+  updateGamePillText();
+  updateKpiRow();
+  clockTimer = setInterval(()=>{ updateGamePillText(); updateKpiRow(); }, 15000);
 }
 
-function updateClock(){
-  const el = document.getElementById('clockBadge');
-  if(!partyStartedAt){ el.textContent = '⏱ 0 min'; return; }
-  const mins = Math.max(0, Math.round((Date.now() - partyStartedAt) / 60000));
-  el.textContent = `⏱ ${mins} min elapsed`;
+function updateGamePillText(){
+  const roundText = isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
+  const mins = partyStartedAt ? Math.max(0, Math.round((Date.now() - partyStartedAt) / 60000)) : 0;
+  document.getElementById('gamePill').textContent = `${roundText} · ⏱ ${mins}m`;
+}
+
+// Three session-level signals — pace, progress, and how the games have been
+// shaping up — deliberately never naming or ranking any individual player.
+function updateKpiRow(){
+  const el = document.getElementById('kpiRow');
+  if(!el) return;
+
+  // 1. Pace: elapsed time so far, projected forward at the current average
+  // pace to estimate how much longer the remaining planned games will take.
+  const gamesPlayed = history.length;
+  const elapsedMin = partyStartedAt ? Math.max(0, Math.round((Date.now()-partyStartedAt)/60000)) : 0;
+  const avgPace = gamesPlayed > 0 ? elapsedMin / gamesPlayed : null;
+  const remainingRounds = Math.max(0, totalRounds - roundNum + (finished ? 0 : 1));
+  const projectedRemaining = (avgPace !== null && remainingRounds > 0) ? Math.round(avgPace * remainingRounds) : null;
+  const paceText = gamesPlayed === 0
+    ? 'Just getting started'
+    : (projectedRemaining !== null ? `${elapsedMin}m elapsed &middot; ~${projectedRemaining}m to go` : `${elapsedMin}m elapsed`);
+
+  // 2. Progress: a simple dot for every planned game — filled for played,
+  // highlighted for the current one, empty for what's left.
+  const dotsHtml = Array.from({length: totalRounds}, (_,i)=>{
+    const gameIdx = i+1;
+    const cls = gameIdx < roundNum ? 'filled' : (gameIdx === roundNum ? 'current' : '');
+    return `<span class="${cls}"></span>`;
+  }).join('');
+
+  // 3. Competitiveness pulse: how close the games have been today, tallied
+  // using the same close/decisive logic the commentary engine already uses.
+  let close=0, solid=0, decisive=0;
+  history.forEach(h=>{
+    [Math.abs(h.aScore1-h.aScore2), Math.abs(h.bScore1-h.bScore2)].forEach(margin=>{
+      if(margin<=2) close++;
+      else if(margin>=8) decisive++;
+      else solid++;
+    });
+  });
+  const pulseParts = [];
+  if(close) pulseParts.push(`<b>${close}</b> close`);
+  if(solid) pulseParts.push(`<b>${solid}</b> solid`);
+  if(decisive) pulseParts.push(`<b>${decisive}</b> decisive`);
+  const pulseText = pulseParts.length ? pulseParts.join(' &middot; ') : 'No games yet';
+
+  el.innerHTML = `
+    <div class="kpi-chip"><span class="kpi-icon">⏱️</span> ${paceText}</div>
+    <div class="kpi-chip"><span class="kpi-icon">📊</span><div class="kpi-dots">${dotsHtml}</div><b>${Math.min(roundNum,totalRounds)}/${totalRounds}</b></div>
+    <div class="kpi-chip"><span class="kpi-icon">🔥</span> ${pulseText}</div>
+  `;
 }
 
 async function endPartyNow(){
@@ -1388,6 +1481,17 @@ async function endPartyNow(){
 // Just toggles visibility of a layer sitting on top of everything else — it
 // never re-renders or touches players/scores/pairing, so whatever's typed
 // into the score boxes underneath is exactly as you left it when you close this.
+function toggleMoreMenu(){
+  document.getElementById('moreMenu').classList.toggle('hidden');
+}
+document.addEventListener('click', (e)=>{
+  const wrap = document.querySelector('.more-menu-wrap');
+  const menu = document.getElementById('moreMenu');
+  if(wrap && menu && !wrap.contains(e.target) && !menu.classList.contains('hidden')){
+    menu.classList.add('hidden');
+  }
+});
+
 function openGuide(){
   document.getElementById('guideOverlay').classList.remove('hidden');
 }
@@ -1420,7 +1524,6 @@ function goHome(){
   document.getElementById('syncNowBtn').classList.add('hidden');
   document.getElementById('endPartyBtn').classList.add('hidden');
   document.getElementById('shareLinkBtn').classList.add('hidden');
-  document.getElementById('clockBadge').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
   // Home should get you back INTO the same party — that's the Join path now,
   // not the Start-a-new-game path, so route there directly with the code ready.
@@ -1625,8 +1728,8 @@ function editableName(id, extraClass){
 }
 
 function render(){
-  document.getElementById('gamePill').textContent =
-    isFinal ? `🏆 Final Game (${roundNum}/${totalRounds})` : `🎾 Game ${roundNum} of ${totalRounds}`;
+  updateGamePillText();
+  updateKpiRow();
   document.getElementById('finalBanner').classList.toggle('hidden', !isFinal);
   document.getElementById('callFinalBtn').closest('.game-length-row').classList.toggle('hidden', isFinal);
   document.getElementById('undoBtn').style.display = undoSnapshot ? 'inline-flex' : 'none';
